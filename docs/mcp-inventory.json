@@ -1,0 +1,4120 @@
+{
+  "tools": [
+    {
+      "name": "get_model_guide",
+      "title": null,
+      "description": "免费本地模型选择建议和配置状态；只检查密钥是否存在，不显示密钥、不请求云端。",
+      "inputSchema": {
+        "properties": {},
+        "type": "object",
+        "title": "get_model_guideArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "advice": {
+            "title": "Advice",
+            "type": "string"
+          },
+          "base_url": {
+            "title": "Base Url",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "key_variable": {
+            "title": "Key Variable",
+            "type": "string"
+          },
+          "key_present": {
+            "title": "Key Present",
+            "type": "boolean"
+          },
+          "default_group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Default Group",
+            "type": "string"
+          },
+          "official_declaration": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Official Declaration",
+            "type": "object"
+          }
+        },
+        "required": [
+          "models",
+          "advice",
+          "base_url",
+          "output_dir",
+          "key_variable",
+          "key_present",
+          "default_group",
+          "official_declaration"
+        ],
+        "type": "object",
+        "title": "GuideResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": null
+    },
+    {
+      "name": "generate_image",
+      "title": null,
+      "description": "同步生成并落盘。默认逆向五参数；官转须显式 group=official。收费，POST 不自动重试。",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "model": {
+            "description": "GPT Image 2.5 Sunburst 非常适合对编辑精度要求极高的应用场景；GPT Image 2.5 Flare 是目前用于生成高质量图片的最快模型。模型可以接受文本和图片作为输入，然后输出相应的图片。以上为用户提供的供应商选型说明，尚未做速度或质量对比实测。请结合用户意图选择并告知所用模型。",
+            "enum": [
+              "gpt-image-2.5-flare",
+              "gpt-image-2.5-sunburst"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "description": "本机绝对图片路径、公开 HTTP(S) 图片 URL 或 base64 data URL；PNG/JPEG/WebP。",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Images"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选 auto 或 WIDTHxHEIGHT；两边为16倍数、最大3840、比例不超过3:1、总像素655360..8294400。省略时不发送。",
+            "title": "Size"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quality"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "group": {
+            "default": "reverse",
+            "description": "分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。",
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "official_options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OfficialOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          }
+        },
+        "required": [
+          "prompt",
+          "model"
+        ],
+        "type": "object",
+        "$defs": {
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "generate_imageArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "edit_image",
+      "title": null,
+      "description": "同步图像编辑并落盘；多图以 image[] 上传。高编辑精度场景建议 Sunburst。收费。",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "model": {
+            "description": "GPT Image 2.5 Sunburst 非常适合对编辑精度要求极高的应用场景；GPT Image 2.5 Flare 是目前用于生成高质量图片的最快模型。模型可以接受文本和图片作为输入，然后输出相应的图片。以上为用户提供的供应商选型说明，尚未做速度或质量对比实测。请结合用户意图选择并告知所用模型。",
+            "enum": [
+              "gpt-image-2.5-flare",
+              "gpt-image-2.5-sunburst"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "images": {
+            "description": "本机绝对图片路径、公开 HTTP(S) 图片 URL 或 base64 data URL；PNG/JPEG/WebP。",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Images",
+            "type": "array"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选 auto 或 WIDTHxHEIGHT；两边为16倍数、最大3840、比例不超过3:1、总像素655360..8294400。省略时不发送。",
+            "title": "Size"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quality"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "group": {
+            "default": "reverse",
+            "description": "分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。",
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "official_options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OfficialOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          }
+        },
+        "required": [
+          "prompt",
+          "model",
+          "images"
+        ],
+        "type": "object",
+        "$defs": {
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "edit_imageArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "submit_image_generation",
+      "title": null,
+      "description": "POST generations?async=true 提交收费异步绘图，立即返回 task_id。必须继续查询才能自动落盘。",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "model": {
+            "description": "GPT Image 2.5 Sunburst 非常适合对编辑精度要求极高的应用场景；GPT Image 2.5 Flare 是目前用于生成高质量图片的最快模型。模型可以接受文本和图片作为输入，然后输出相应的图片。以上为用户提供的供应商选型说明，尚未做速度或质量对比实测。请结合用户意图选择并告知所用模型。",
+            "enum": [
+              "gpt-image-2.5-flare",
+              "gpt-image-2.5-sunburst"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "description": "本机绝对图片路径、公开 HTTP(S) 图片 URL 或 base64 data URL；PNG/JPEG/WebP。",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Images"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选 auto 或 WIDTHxHEIGHT；两边为16倍数、最大3840、比例不超过3:1、总像素655360..8294400。省略时不发送。",
+            "title": "Size"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quality"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "group": {
+            "default": "reverse",
+            "description": "分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。",
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "official_options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OfficialOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          }
+        },
+        "required": [
+          "prompt",
+          "model"
+        ],
+        "type": "object",
+        "$defs": {
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "submit_image_generationArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "submit_image_edit",
+      "title": null,
+      "description": "POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 task_id，之后查询并落盘。",
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "model": {
+            "description": "GPT Image 2.5 Sunburst 非常适合对编辑精度要求极高的应用场景；GPT Image 2.5 Flare 是目前用于生成高质量图片的最快模型。模型可以接受文本和图片作为输入，然后输出相应的图片。以上为用户提供的供应商选型说明，尚未做速度或质量对比实测。请结合用户意图选择并告知所用模型。",
+            "enum": [
+              "gpt-image-2.5-flare",
+              "gpt-image-2.5-sunburst"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "images": {
+            "description": "本机绝对图片路径、公开 HTTP(S) 图片 URL 或 base64 data URL；PNG/JPEG/WebP。",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Images",
+            "type": "array"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选 auto 或 WIDTHxHEIGHT；两边为16倍数、最大3840、比例不超过3:1、总像素655360..8294400。省略时不发送。",
+            "title": "Size"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quality"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "group": {
+            "default": "reverse",
+            "description": "分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。",
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "official_options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OfficialOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          }
+        },
+        "required": [
+          "prompt",
+          "model",
+          "images"
+        ],
+        "type": "object",
+        "$defs": {
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "submit_image_editArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "submit_image_batch",
+      "title": null,
+      "description": "一次并发提交1–10项收费异步生成/编辑，默认并发3。收到任务编号即返回，不等待成图。同一(checkpointer,thread_id,task_id)及参数复用记录，参数冲突在提交前拒绝；不确定提交永不自动重发。",
+      "inputSchema": {
+        "properties": {
+          "checkpointer": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/$defs/BatchImageTask"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "max_concurrency": {
+            "default": 3,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Concurrency",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ],
+        "type": "object",
+        "$defs": {
+          "BatchImageTask": {
+            "additionalProperties": false,
+            "description": "One stable caller-assigned task identity inside a checkpoint thread.",
+            "properties": {
+              "task_id": {
+                "description": "Agent 指定的稳定任务键；重试不能改名。",
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "title": "Task Id",
+                "type": "string"
+              },
+              "operation": {
+                "default": "generate",
+                "enum": [
+                  "generate",
+                  "edit"
+                ],
+                "title": "Operation",
+                "type": "string"
+              },
+              "prompt": {
+                "maxLength": 32000,
+                "minLength": 1,
+                "title": "Prompt",
+                "type": "string"
+              },
+              "model": {
+                "enum": [
+                  "gpt-image-2.5-flare",
+                  "gpt-image-2.5-sunburst"
+                ],
+                "title": "Model",
+                "type": "string"
+              },
+              "images": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Images"
+              },
+              "size": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Size"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh",
+                      "max"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality"
+              },
+              "output_dir": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Dir"
+              },
+              "group": {
+                "default": "reverse",
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "official_options": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/OfficialOptions"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              }
+            },
+            "required": [
+              "task_id",
+              "prompt",
+              "model"
+            ],
+            "title": "BatchImageTask",
+            "type": "object"
+          },
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "submit_image_batchArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACCEPTED",
+              "ATTENTION_REQUIRED",
+              "SNAPSHOT"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/$defs/CheckpointTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "status",
+          "tasks",
+          "next_tool",
+          "note"
+        ],
+        "type": "object",
+        "$defs": {
+          "CheckpointTask": {
+            "properties": {
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "RESERVED",
+                  "SUBMITTING",
+                  "SUBMITTED",
+                  "SUBMISSION_UNCERTAIN",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "FAILURE"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "provider_task_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Provider Task Id"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "result": {
+                "$ref": "#/$defs/ImageResult"
+              }
+            },
+            "required": [
+              "task_id",
+              "status",
+              "provider_task_id",
+              "group",
+              "output_dir",
+              "reused"
+            ],
+            "title": "CheckpointTask",
+            "type": "object"
+          },
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "ImageResult": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "COMPLETED",
+                  "SUBMITTED",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "UNKNOWN"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "next_tool": {
+                "title": "Next Tool",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "note": {
+                "title": "Note",
+                "type": "string"
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Progress"
+              },
+              "fail_reason": {
+                "title": "Fail Reason",
+                "type": "string"
+              },
+              "wait_timed_out": {
+                "title": "Wait Timed Out",
+                "type": "boolean"
+              },
+              "response": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Response"
+              },
+              "files": {
+                "items": {
+                  "$ref": "#/$defs/SavedFile"
+                },
+                "title": "Files",
+                "type": "array"
+              },
+              "download_errors": {
+                "items": {
+                  "$ref": "#/$defs/DownloadError"
+                },
+                "title": "Download Errors",
+                "type": "array"
+              },
+              "save_status": {
+                "enum": [
+                  "saved",
+                  "partial",
+                  "failed",
+                  "no_images"
+                ],
+                "title": "Save Status",
+                "type": "string"
+              },
+              "usage": {
+                "additionalProperties": true,
+                "title": "Usage",
+                "type": "object"
+              },
+              "cost": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cost"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "title": "ImageResult",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "BatchResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "get_image_batch",
+      "title": null,
+      "description": "免费读取本地持久化检查点，恢复该会话所有 task_id/provider_task_id/最后观察状态；不查询供应商、不提交、不等待成图。",
+      "inputSchema": {
+        "properties": {
+          "checkpointer": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id"
+        ],
+        "type": "object",
+        "title": "get_image_batchArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACCEPTED",
+              "ATTENTION_REQUIRED",
+              "SNAPSHOT"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/$defs/CheckpointTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "status",
+          "tasks",
+          "next_tool",
+          "note"
+        ],
+        "type": "object",
+        "$defs": {
+          "CheckpointTask": {
+            "properties": {
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "RESERVED",
+                  "SUBMITTING",
+                  "SUBMITTED",
+                  "SUBMISSION_UNCERTAIN",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "FAILURE"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "provider_task_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Provider Task Id"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "result": {
+                "$ref": "#/$defs/ImageResult"
+              }
+            },
+            "required": [
+              "task_id",
+              "status",
+              "provider_task_id",
+              "group",
+              "output_dir",
+              "reused"
+            ],
+            "title": "CheckpointTask",
+            "type": "object"
+          },
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "ImageResult": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "COMPLETED",
+                  "SUBMITTED",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "UNKNOWN"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "next_tool": {
+                "title": "Next Tool",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "note": {
+                "title": "Note",
+                "type": "string"
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Progress"
+              },
+              "fail_reason": {
+                "title": "Fail Reason",
+                "type": "string"
+              },
+              "wait_timed_out": {
+                "title": "Wait Timed Out",
+                "type": "boolean"
+              },
+              "response": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Response"
+              },
+              "files": {
+                "items": {
+                  "$ref": "#/$defs/SavedFile"
+                },
+                "title": "Files",
+                "type": "array"
+              },
+              "download_errors": {
+                "items": {
+                  "$ref": "#/$defs/DownloadError"
+                },
+                "title": "Download Errors",
+                "type": "array"
+              },
+              "save_status": {
+                "enum": [
+                  "saved",
+                  "partial",
+                  "failed",
+                  "no_images"
+                ],
+                "title": "Save Status",
+                "type": "string"
+              },
+              "usage": {
+                "additionalProperties": true,
+                "title": "Usage",
+                "type": "object"
+              },
+              "cost": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cost"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "title": "ImageResult",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "BatchResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": null
+    },
+    {
+      "name": "get_batch_image_task",
+      "title": null,
+      "description": "按原(checkpointer,thread_id,task_id)查询供应商异步结果并自动落盘；只读HTTP有限重试。没有供应商编号时返回本地状态，不重新提交。云端失败为工具错误；检查 result.save_status。",
+      "inputSchema": {
+        "properties": {
+          "checkpointer": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "task_id": {
+            "description": "批量提交时指定的原始 task_id。",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "save": {
+            "default": true,
+            "title": "Save",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "task_id"
+        ],
+        "type": "object",
+        "title": "get_batch_image_taskArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "SUBMITTING",
+              "SUBMITTED",
+              "SUBMISSION_UNCERTAIN",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "FAILURE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "provider_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Task Id"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/$defs/ImageResult"
+          },
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "status",
+          "provider_task_id",
+          "group",
+          "output_dir",
+          "reused",
+          "checkpointer",
+          "thread_id"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "ImageResult": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "COMPLETED",
+                  "SUBMITTED",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "UNKNOWN"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "next_tool": {
+                "title": "Next Tool",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "note": {
+                "title": "Note",
+                "type": "string"
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Progress"
+              },
+              "fail_reason": {
+                "title": "Fail Reason",
+                "type": "string"
+              },
+              "wait_timed_out": {
+                "title": "Wait Timed Out",
+                "type": "boolean"
+              },
+              "response": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Response"
+              },
+              "files": {
+                "items": {
+                  "$ref": "#/$defs/SavedFile"
+                },
+                "title": "Files",
+                "type": "array"
+              },
+              "download_errors": {
+                "items": {
+                  "$ref": "#/$defs/DownloadError"
+                },
+                "title": "Download Errors",
+                "type": "array"
+              },
+              "save_status": {
+                "enum": [
+                  "saved",
+                  "partial",
+                  "failed",
+                  "no_images"
+                ],
+                "title": "Save Status",
+                "type": "string"
+              },
+              "usage": {
+                "additionalProperties": true,
+                "title": "Usage",
+                "type": "object"
+              },
+              "cost": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cost"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "title": "ImageResult",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "CheckpointResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "get_image_task",
+      "title": null,
+      "description": "查询 NOT_START（排队）/IN_PROGRESS/FAILURE/SUCCESS；暂时性查询故障最多尝试3次。save=true 时成功图片自动落盘；false 仅查询。不重新提交。",
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          },
+          "save": {
+            "default": true,
+            "title": "Save",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "type": "object",
+        "title": "get_image_taskArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "wait_image_task",
+      "title": null,
+      "description": "有界轮询，NOT_START 排队和 IN_PROGRESS 处理中继续等待，成功后落盘；只读查询有限重试计入等待时限。超时返回 task_id/wait_timed_out，云端任务继续；可稍后再次查询。",
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "timeout_seconds": {
+            "default": 60,
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Timeout Seconds",
+            "type": "number"
+          },
+          "poll_interval": {
+            "default": 5,
+            "maximum": 60,
+            "minimum": 1,
+            "title": "Poll Interval",
+            "type": "number"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "type": "object",
+        "title": "wait_image_taskArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "SUBMITTED",
+              "NOT_START",
+              "IN_PROGRESS",
+              "SUCCESS",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "group": {
+            "enum": [
+              "reverse",
+              "official"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "task_id": {
+            "title": "Task Id",
+            "type": "string"
+          },
+          "output_dir": {
+            "title": "Output Dir",
+            "type": "string"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "fail_reason": {
+            "title": "Fail Reason",
+            "type": "string"
+          },
+          "wait_timed_out": {
+            "title": "Wait Timed Out",
+            "type": "boolean"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/$defs/SavedFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "download_errors": {
+            "items": {
+              "$ref": "#/$defs/DownloadError"
+            },
+            "title": "Download Errors",
+            "type": "array"
+          },
+          "save_status": {
+            "enum": [
+              "saved",
+              "partial",
+              "failed",
+              "no_images"
+            ],
+            "title": "Save Status",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "$defs": {
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "ImageResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "download_image",
+      "title": null,
+      "description": "按图片 URL 下载并校验 PNG/JPEG/WebP，自动落盘返回绝对路径；不会附带供应商 API Key。",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "公开 HTTP(S) 图片 URL",
+            "title": "Url",
+            "type": "string"
+          },
+          "output_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。",
+            "title": "Output Dir"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "title": "download_imageArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "mime_type",
+          "bytes",
+          "sha256",
+          "reused"
+        ],
+        "type": "object",
+        "title": "FileResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    }
+  ],
+  "prompts": [
+    {
+      "name": "image_workflow",
+      "title": null,
+      "description": "根据用户需求选择模型与同步/异步绘图流程；模板本身不收费。",
+      "arguments": [
+        {
+          "name": "request",
+          "title": null,
+          "description": null,
+          "required": true
+        }
+      ],
+      "icons": null,
+      "_meta": null
+    }
+  ],
+  "resources": [
+    {
+      "name": "model_resource",
+      "title": null,
+      "uri": "zhenzhen://models",
+      "description": "Static model advice and compatibility statement; no secrets or cloud calls.",
+      "mimeType": "application/json",
+      "size": null,
+      "icons": null,
+      "annotations": null,
+      "_meta": null
+    }
+  ],
+  "resource_templates": []
+}

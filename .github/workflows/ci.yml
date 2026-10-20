@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-10-20
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6, peeled commit
+        with:
+          version: '0.12.9'
+          enable-cache: true
+      - name: Locked development installation
+        run: uv sync --locked
+      - name: Quality, contracts, protocol, build and dependency audit
+        run: uv run --no-sync python scripts/check.py --build --audit
+      - name: Fresh runtime installation and protocol check
+        run: uv run --no-sync python scripts/package_user.py --verify-only
+      - name: PowerShell documentation syntax
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/check-powershell-docs.ps1
+      - name: Retain verification reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-${{ matrix.os }}
+          path: .runtime/reports/
+          retention-days: 14
+          if-no-files-found: error

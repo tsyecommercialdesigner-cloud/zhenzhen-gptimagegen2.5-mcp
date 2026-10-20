@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "zhenzhen-gptimagegen2-5-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
+        "run",
+        "--no-sync",
+        "python",
+        "-m",
+        "zhenzhen_image_mcp"
+      ]
+    }
+  }
+}
