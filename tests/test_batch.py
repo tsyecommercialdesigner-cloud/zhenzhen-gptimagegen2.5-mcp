@@ -235,7 +235,9 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(done.structured_content["task_id"], "page_0")
         self.assertEqual(done.structured_content["provider_task_id"], "recover_123")
         self.assertEqual(done.structured_content["result"]["save_status"], "saved")
-        self.assertEqual(Path(done.structured_content["result"]["files"][0]["path"]).parent, destination)
+        self.assertTrue(
+            Path(done.structured_content["result"]["files"][0]["path"]).parent.samefile(destination)
+        )
         snapshot = await BatchService().snapshot("detail-pages", "product-001")
         self.assertEqual(snapshot["tasks"][0]["status"], "SUCCESS")
         self.assertEqual([r.method for r in self.requests], ["POST", "GET", "GET", "GET"])

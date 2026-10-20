@@ -97,7 +97,7 @@ class APIContractTests(unittest.IsolatedAsyncioTestCase):
         restarted = API(self.api.settings)
         restarted.sdk = self.api.sdk
         result = await restarted.query("task_123")
-        self.assertEqual(Path(result["files"][0]["path"]).parent, dest)
+        self.assertTrue(Path(result["files"][0]["path"]).parent.samefile(dest))
         again = await restarted.query("task_123")
         self.assertTrue(again["files"][0]["reused"])
 
