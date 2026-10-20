@@ -14,7 +14,7 @@
 | G6 | 凭据逐字段 `.env → 进程 → Windows 用户级`；空值/非法值不回退，保留成员私有文件 | config.py；更新优先级与缺失/非法来源测试 |
 | G7 | 公共输出 schema 与实际结果一致；保持旧工具名及常用参数兼容，资源/提示按发现生成 | TypedDict 契约、SDK discovery / call 检查 |
 | G8 | 分离验证、供应商传输、任务解析/元数据和编排；依赖不擅自升级 | 新模块 + API 兼容门面；全部回归 |
-| G9 | 提供本地可复现检查、Windows/Linux CI、受控发布工作流；默认 GitHub 版本安装，ZIP 可选 | scripts / workflows / README / MANUAL；本地验证，远端状态单独报告 |
+| G9 | 提供本地可复现检查、Windows CI 和 Windows 发布验收（按用户明确的平台范围）；默认 GitHub 版本安装，ZIP 可选 | scripts / workflows / README / MANUAL；本地验证，远端状态单独报告 |
 
 ## 声明 format def
 

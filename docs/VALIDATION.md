@@ -149,3 +149,12 @@
 ### 尚未验证或交付
 
 没有调用真实供应商、没有产生绘图费用；实际并发速率限制、任务接收延迟和图片效果未验证。没有更新 `C:\MCP` 实际安装或重启用户 Host；GUI/DSH/代理联调、远端 CI、评审与发布仍未进行。0.3.0 是本地候选版本，不能作为已发布标签提供给成员。
+
+## 2026-10-20：按用户范围采用 Windows CI 与发布验收
+
+- 用户明确实际用户仅使用 Windows，要求 CI 只检查 Windows，提交/推送 dev、更新 PR 并确认新 CI；不合并或发布。这是支持平台范围调整，保留前述历史 Linux 失败证据，不将其记录成已经修复。
+- CI 矩阵仅保留 windows-latest，质量检查名称维持 quality (windows-latest)。全部格式/lint/类型、秘密、文档、87 项测试、构建、依赖审计、独立安装、协议与 PowerShell 示例检查继续执行；未删除测试、跳过检查或添加 continue-on-error。
+- 手动 Release 工作流调用同套验收脚本，因此执行环境同步为 windows-latest；手动触发、默认分支限制、release 环境、权限、标签校验和 draft Release 行为不变。本轮不触发 Release。
+- 对变更前后 YAML 解析结构比较，确认 CI 只改变 OS 矩阵、Release 只改变 runner；脚本和检查步骤保持一致。本地文档 JSON/TOML/YAML、秘密检查、22 段 PowerShell AST 与差异格式检查通过。
+- 之前 Windows 路径断言修复 e24decc 已在 PR CI 39411511709 和 push CI 39411505913 的 Windows 作业通过：87 项测试、独立安装与 11 工具 stdio 等检查成功。其 Ubuntu 作业失败保留为历史结果。
+- README、MANUAL 和重构契约同步 Windows 支持/验收范围，并纠正候选版本已推送 dev / PR #1、尚未合并发布的状态。当前提交的远端结果以 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 实际 Actions 结果为准；CI 通过不表示真实 Host、收费接口或发布审批已验收。

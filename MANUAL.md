@@ -1,12 +1,12 @@
 # Zhenzhen Image MCP 使用手册
 
-适用版本：0.3.0（本地重构候选，尚未发布）。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
+适用版本：0.3.0（开发候选，已推送 dev，尚未合并或发布）。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
 
 ## 1. 环境准备
 
 ### 部署与名称
 
-实际仓库：<https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp>。本轮只在本地分支完成重构；尚无该候选版本通过远端 CI 或发布的证据。正式安装必须选该仓库 Releases 中已通过检查的版本及完整 SHA，不能将下文候选号当作已存在标签。
+实际仓库：<https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp>。候选版本已推送 dev，由 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 审查；各提交的远端 CI 状态以该 PR 为准，尚未合并或发布。正式安装必须选该仓库 Releases 中已通过检查的版本及完整 SHA，不能将下文候选号当作已存在标签。
 
 本项目是 Python **stdio MCP Server**。本地成员在运行 Host 的机器安装它；也可由 Cherry Studio 启动后，通过其 MCP Proxy 供其他 Host 使用。仅连接代理的用户不安装后端、不执行 uv、不复制后端 API Key。项目没有独立 HTTP 监听服务或容器部署入口，代理的部署与安全由网关维护者负责。
 
@@ -32,7 +32,7 @@
 
 | 项目 | 要求 / 已验证范围 |
 |---|---|
-| 平台 | 本项目在 Windows / PowerShell 7 验证；其他系统需调整安装路径，未做成员安装实测 |
+| 平台 | 当前支持范围为 Windows / PowerShell 7；CI 与发布验收仅使用 Windows，其他系统不在当前支持范围 |
 | Python | `>=3.12,<3.13`；`.python-version` 固定 `3.12.14` |
 | Git / 包管理器 | Git（获取发布版本）、uv 0.12.9（本轮实测）；需能访问 Python 包源，安装时联网，日常启动 `--no-sync` |
 | 构建 | hatchling `1.27.0`；纯 Python `src/` 布局，不需要 Node.js、npm 或额外 SDK extra |
@@ -75,7 +75,7 @@
 
 ### 从 GitHub 固定版本安装
 
-默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。**0.3.0 尚未推送/发布**；以下命令供正式发布后使用。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不猜测 `v0.3.0` 已存在。
+默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。**0.3.0 已推送 dev，尚未发布**；以下命令供正式发布后使用。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不猜测 `v0.3.0` 已存在。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -685,11 +685,11 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 
 ### GitHub 源码、运行入口与本地生成物
 
-实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，候选元数据版本为 0.3.0；本轮未提交/推送，尚无可供成员安装的本次发布标签、完整 SHA 或远端 CI 运行。正式发布记录应补齐这些证据。
+实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，候选元数据版本为 0.3.0；代码已推送 dev 并创建 PR #1，提交 SHA 和 CI 运行见该 PR。当前尚无可供成员安装的本次发布标签；正式发布记录应提供标签、完整 SHA、默认分支 CI 及安装验收证据。
 
 仓库维护 `src/`、元数据与锁、`.python-version`、空 `.env.example`、模板、README/MANUAL、`tests/`、`scripts/`、开发规范/契约以及 `.github/workflows/`。新模块分别负责分组契约（contracts）、供应商 JSON/SSE（provider）、任务响应与元数据（tasks）、工作流编排（api）。`.venv/`、`dist/`、缓存、测试报告和私有配置由安装/验证生成，不随源码跟踪。
 
-本地与 CI 的共用检查入口为 `uv run --no-sync python scripts/check.py --build --audit`；报告写入 `.runtime/reports/`。PR 与 push 的 CI 配置声明 Windows/Linux 两个平台；受控 Release 只从默认分支手动触发，核对既有版本标签、元数据、同提交成功的 push CI，并重新构建/安装验证后生成带 SHA256SUMS 和证据的 **draft Release**。发布前还需维护者配置真实 ruleset/必需评审和 release 环境审批，再审阅草稿并批准公开。工作流文件与本地结果不等于远端门禁已启用或 CI 已通过。
+本地与 CI 的共用检查入口为 `uv run --no-sync python scripts/check.py --build --audit`；报告写入 `.runtime/reports/`。按 Windows 用户范围，PR 与 push CI 仅使用 `windows-latest`，保留全部格式/lint/类型、秘密、文档、测试、构建、依赖、独立安装和协议检查。受控 Release 同样在 Windows 运行，只从默认分支手动触发，核对既有版本标签、元数据、同提交成功的 push CI，并重新构建/安装验证后生成带 SHA256SUMS 和证据的 **draft Release**。发布前还需维护者配置真实 ruleset/必需评审和 release 环境审批，再审阅草稿并批准公开。CI 运行成功不等于远端合并/发布门禁已配置。
 
 ### 可选 ZIP
 
@@ -1349,5 +1349,5 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | Host 协议/SDK 不兼容 | SDK 版本与协议版本分开核对；本轮证明的是 stdio legacy 2025-11-25 路径，Tools-only 桥接不适用完整能力检查 |
 | stdio 没反应 / 协议解析失败 | 无输出可正常；用检查脚本判定。stdout 只保留协议，调试日志改 stderr，核对实际模块入口 |
 | 是否支持 Responses / 流式模型响应 | 当前不提供，已按用户要求移除；用 Images 编辑与异步工具，不能凭供应商通用文档恢复已删除能力 |
-| GitHub CI/发布是否已生效 | 本轮交付工作流文件与本地检查，尚未推送或运行远端 Actions；真实 ruleset、评审和环境审批须由维护者配置，不能把文件存在当作验收通过 |
+| GitHub CI/发布是否已生效 | dev / PR #1 已运行 Actions；当前配置仅验收 Windows，各提交状态见 PR。尚未合并或发布，真实 ruleset、评审和环境审批须由维护者配置，CI 通过不等于发布门禁已启用 |
 | 默认逆向却传官转参数报错 | 在工具 arguments 顶层显式写 group=official，参数放 official_options；同时核对 Key 后台分组。服务不会自动换组 |
