@@ -1,0 +1,70 @@
+[project]
+name = "zhenzhen-image"
+version = "0.3.0"
+description = "Stdio MCP for Zhenzhen GPT Image generation, editing and asynchronous tasks"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mcp==2.2.0",
+    "httpx==0.28.1",
+    "pillow==12.3.0",
+    "openai==3.13.0",
+    "httpx2==2.12.0",
+    "python-dotenv==1.2.2",
+    "pydantic==2.13.5",
+    "typing-extensions==4.16.0",
+    "pyjwt[crypto]==2.15.0",
+    "jsonschema==4.26.0",
+]
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zhenzhen_image_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/scripts",
+    "/docs",
+    "/.github",
+    "/README.md",
+    "/MANUAL.md",
+    "/AGENTS.md",
+    "/pyproject.toml",
+    "/uv.lock",
+    "/.python-version",
+    "/.env.example",
+    "/.mcp.json.example",
+    "/.cherrystudiomcpproxy.mcp.json.example",
+    "/user-files.json",
+]
+exclude = ["**/__pycache__/**"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+include = ["src/**/*.py", "tests/**/*.py", "scripts/**/*.py"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+check_untyped_defs = true
+ignore_missing_imports = true
+follow_imports = "silent"
+disable_error_code = ["annotation-unchecked"]
+
+[dependency-groups]
+dev = [
+    "mypy==1.18.2",
+    "pip-audit==2.9.0",
+    "pyyaml==6.0.3",
+    "ruff==0.14.1",
+    "unittest-xml-reporting==3.2.0",
+]

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "zhenzhen-gptimagegen2-5-mcp-proxy": {
+      "type": "streamableHTTP",
+      "url": "http://127.0.0.1:23333/v1/mcps/<cherrystudio_mcp_proxy_server_id>/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CHERRYSTUDIO_API_GATEWAY_API_KEY}"
+      }
+    }
+  }
+}
