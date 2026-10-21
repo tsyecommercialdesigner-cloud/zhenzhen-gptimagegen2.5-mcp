@@ -17,6 +17,19 @@ def capture(*args: str) -> str:
     return subprocess.check_output(args, cwd=ROOT, text=True).strip()
 
 
+def successful_default_branch_runs(runs: list[dict], sha: str, branch: str) -> list[dict]:
+    """Only the merged commit's completed default-branch push CI authorizes release."""
+    return [
+        run
+        for run in runs
+        if run.get("headSha") == sha
+        and run.get("headBranch") == branch
+        and run.get("event") == "push"
+        and run.get("status") == "completed"
+        and run.get("conclusion") == "success"
+    ]
+
+
 def main() -> None:
     tag = os.environ["RELEASE_TAG"]
     repository = os.environ["RELEASE_REPOSITORY"]
@@ -44,19 +57,12 @@ def main() -> None:
             "--workflow",
             "ci.yml",
             "--json",
-            "headSha,status,conclusion,event,url",
+            "headSha,headBranch,status,conclusion,event,url",
         )
     )
-    passed = [
-        run
-        for run in runs
-        if run["headSha"] == sha
-        and run["event"] == "push"
-        and run["status"] == "completed"
-        and run["conclusion"] == "success"
-    ]
+    passed = successful_default_branch_runs(runs, sha, repo["default_branch"])
     if not passed:
-        raise ValueError("Target commit has no successful completed push CI; release stopped")
+        raise ValueError("Target commit has no successful completed default-branch push CI; release stopped")
     artifacts = sorted((ROOT / "dist").glob(f"zhenzhen_image-{version}-*.whl"))
     artifacts += sorted((ROOT / "dist").glob(f"zhenzhen_image-{version}.tar.gz"))
     if len(artifacts) != 2:
@@ -73,6 +79,8 @@ def main() -> None:
                 "tag": tag,
                 "commit": sha,
                 "version": version,
+                "default_branch": repo["default_branch"],
+                "release_run": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
                 "ci": passed[0]["url"],
                 "install_check": "fresh locked runtime install and stdio smoke passed in release job",
             },

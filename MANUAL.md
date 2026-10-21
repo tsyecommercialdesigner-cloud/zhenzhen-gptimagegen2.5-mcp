@@ -1,12 +1,12 @@
 # Zhenzhen Image MCP 使用手册
 
-适用版本：0.3.0（开发候选，已推送 dev，尚未合并或发布）。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
+适用版本：0.3.0；是否已公开发布，以实际 GitHub Release 记录为准。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
 
 ## 1. 环境准备
 
 ### 部署与名称
 
-实际仓库：<https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp>。候选版本已推送 dev，由 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 审查；各提交的远端 CI 状态以该 PR 为准，尚未合并或发布。正式安装必须选该仓库 Releases 中已通过检查的版本及完整 SHA，不能将下文候选号当作已存在标签。
+实际仓库：<https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp>。源码已由 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 合入 main；各发布版本的远端 CI 以 Release 证据所链接的实际提交为准。正式安装必须选该仓库 Releases 中已通过检查的版本及完整 SHA，不能将下文候选号当作已存在标签。
 
 本项目是 Python **stdio MCP Server**。本地成员在运行 Host 的机器安装它；也可由 Cherry Studio 启动后，通过其 MCP Proxy 供其他 Host 使用。仅连接代理的用户不安装后端、不执行 uv、不复制后端 API Key。项目没有独立 HTTP 监听服务或容器部署入口，代理的部署与安全由网关维护者负责。
 
@@ -38,7 +38,7 @@
 | 构建 | hatchling `1.27.0`；纯 Python `src/` 布局，不需要 Node.js、npm 或额外 SDK extra |
 | MCP SDK | 官方 Python SDK `mcp==2.2.0`，使用 `MCPServer` |
 | 业务 / HTTP SDK | `openai==3.13.0`、`httpx==0.28.1`、`httpx2==2.12.0` |
-| 其他主要运行依赖 | Pillow `12.3.0`、python-dotenv `1.2.2`、PyJWT `2.15.0`；后两项按本轮依赖安全公告修复，全部版本以 `uv.lock` 为准 |
+| 其他主要运行依赖 | Pillow `13.0.0`、python-dotenv `1.2.2`、PyJWT `2.15.0`；TLS 证书依赖 certifi 锁定 `2026.10.19`，这些依赖按安全公告修复，全部版本以 `uv.lock` 为准 |
 | 协议与传输 | 本轮实际 stdio legacy 客户端协商 `2025-11-25`，检查 initialize/initialized；SDK 主版本不等于协议版本 |
 | Host | Cherry Studio 本地 / 代理、Codex、Claude Code、DSH 的配置见第 4 节；GUI 与代理实际连接未在本轮验证 |
 | CLI 依据 | 2026-10-14 历史 help 核对：Codex `0.153.0`、Claude Code `2.1.258`、DSH `0.1.1-rc.2`；升级后重新核对帮助 |
@@ -75,7 +75,7 @@
 
 ### 从 GitHub 固定版本安装
 
-默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。**0.3.0 已推送 dev，尚未发布**；以下命令供正式发布后使用。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不猜测 `v0.3.0` 已存在。
+默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。以下命令仅用于 Releases 中已公开的版本；如尚无目标版本，请勿猜测标签。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不猜测 `v0.3.0` 已存在。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -685,7 +685,7 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 
 ### GitHub 源码、运行入口与本地生成物
 
-实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，候选元数据版本为 0.3.0；代码已推送 dev 并创建 PR #1，提交 SHA 和 CI 运行见该 PR。当前尚无可供成员安装的本次发布标签；正式发布记录应提供标签、完整 SHA、默认分支 CI 及安装验收证据。
+实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，元数据版本为 0.3.0。发布流程核对标签与元数据一致、目标提交属于默认分支且通过该分支 push CI，再构建、验证并生成发布草稿。核对草稿中的标签、完整 SHA、默认分支 CI、安装证据及 SHA256SUMS 后公开；成员只安装已公开的发布版本。
 
 仓库维护 `src/`、元数据与锁、`.python-version`、空 `.env.example`、模板、README/MANUAL、`tests/`、`scripts/`、开发规范/契约以及 `.github/workflows/`。新模块分别负责分组契约（contracts）、供应商 JSON/SSE（provider）、任务响应与元数据（tasks）、工作流编排（api）。`.venv/`、`dist/`、缓存、测试报告和私有配置由安装/验证生成，不随源码跟踪。
 
@@ -693,7 +693,7 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 
 ### 可选 ZIP
 
-沿用显式白名单作可选交付，当前共 22 个运行/初始化文件；GitHub clone 不受这个运行子集限制：
+沿用显式白名单作可选交付，当前共 23 个运行/初始化文件；GitHub clone 不受这个运行子集限制：
 
 <!-- MEMBER_FILES_START -->
 - `.env.example`
@@ -702,6 +702,7 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 - `.python-version`
 - `.mcp.json.example`
 - `.cherrystudiomcpproxy.mcp.json.example`
+- `LICENSE`
 - `README.md`
 - `MANUAL.md`
 - `user-files.json`
@@ -1349,5 +1350,5 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | Host 协议/SDK 不兼容 | SDK 版本与协议版本分开核对；本轮证明的是 stdio legacy 2025-11-25 路径，Tools-only 桥接不适用完整能力检查 |
 | stdio 没反应 / 协议解析失败 | 无输出可正常；用检查脚本判定。stdout 只保留协议，调试日志改 stderr，核对实际模块入口 |
 | 是否支持 Responses / 流式模型响应 | 当前不提供，已按用户要求移除；用 Images 编辑与异步工具，不能凭供应商通用文档恢复已删除能力 |
-| GitHub CI/发布是否已生效 | dev / PR #1 已运行 Actions；当前配置仅验收 Windows，各提交状态见 PR。尚未合并或发布，真实 ruleset、评审和环境审批须由维护者配置，CI 通过不等于发布门禁已启用 |
+| GitHub CI/发布是否已生效 | PR #1 已合入 main 并通过合入提交的 Windows CI；各版本的发布运行及证据见实际 Release。发布前已配置 main 的 PR/CI 检查、v* 标签不可修改/删除及 release 环境维护者审批（仅 main）；单维护者无需独立 approving review，不能视为独立同行评审。当前设置以 GitHub 为准 |
 | 默认逆向却传官转参数报错 | 在工具 arguments 顶层显式写 group=official，参数放 official_options；同时核对 Key 后台分组。服务不会自动换组 |

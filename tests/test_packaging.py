@@ -27,6 +27,7 @@ class PackagingTests(unittest.TestCase):
             install = base / "install"
             with zipfile.ZipFile(archive) as z:
                 self.assertEqual(set(z.namelist()), {f"{packaging.PROJECT_NAME}/{name}" for name in names})
+                self.assertEqual(z.read(f"{packaging.PROJECT_NAME}/LICENSE"), (ROOT / "LICENSE").read_bytes())
                 z.extractall(install)
             project = install / packaging.PROJECT_NAME
             private = project / ".env"
@@ -80,6 +81,7 @@ class PackagingTests(unittest.TestCase):
                 shutil.copyfile(ROOT / name, dest)
             self.assertEqual(set(packaging.audited_files(root)), set(names))
             bad_lists = [
+                [x for x in names if x != "LICENSE"],
                 names + [names[0]],
                 names + ["../outside.py"],
                 names + ["C:/secret"],

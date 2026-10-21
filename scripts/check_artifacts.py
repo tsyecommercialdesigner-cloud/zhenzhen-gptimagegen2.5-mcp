@@ -25,7 +25,10 @@ def safe(name: str) -> None:
 def check() -> None:
     version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
     wheel = ROOT / "dist" / f"zhenzhen_image-{version}-py3-none-any.whl"
+    license_bytes = (ROOT / "LICENSE").read_bytes()
     with zipfile.ZipFile(wheel) as archive:
+        if archive.read(f"zhenzhen_image-{version}.dist-info/licenses/LICENSE") != license_bytes:
+            raise ValueError("Wheel license differs from repository LICENSE")
         for name in archive.namelist():
             safe(name)
         required = {
@@ -42,6 +45,9 @@ def check() -> None:
         if not required <= set(archive.namelist()):
             raise ValueError("Incomplete wheel entry points")
     with tarfile.open(ROOT / "dist" / f"zhenzhen_image-{version}.tar.gz") as archive:
+        license_file = archive.extractfile(f"zhenzhen_image-{version}/LICENSE")
+        if license_file is None or license_file.read() != license_bytes:
+            raise ValueError("Source distribution license differs from repository LICENSE")
         for entry in archive.getmembers():
             safe(entry.name)
             if entry.issym() or entry.islnk():

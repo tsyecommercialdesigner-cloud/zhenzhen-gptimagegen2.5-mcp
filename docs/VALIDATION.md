@@ -158,3 +158,13 @@
 - 对变更前后 YAML 解析结构比较，确认 CI 只改变 OS 矩阵、Release 只改变 runner；脚本和检查步骤保持一致。本地文档 JSON/TOML/YAML、秘密检查、22 段 PowerShell AST 与差异格式检查通过。
 - 之前 Windows 路径断言修复 e24decc 已在 PR CI 39411511709 和 push CI 39411505913 的 Windows 作业通过：87 项测试、独立安装与 11 工具 stdio 等检查成功。其 Ubuntu 作业失败保留为历史结果。
 - README、MANUAL 和重构契约同步 Windows 支持/验收范围，并纠正候选版本已推送 dev / PR #1、尚未合并发布的状态。当前提交的远端结果以 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 实际 Actions 结果为准；CI 通过不表示真实 Host、收费接口或发布审批已验收。
+
+
+## 0.3.0 发布前复验（2026-10-21）
+
+- 发布准备补齐 MIT 元数据、wheel/sdist 和可选成员 ZIP 的 LICENSE，校验发行物与仓库许可证逐字节一致；成员运行子集为 23 个文件。
+- 发布门禁只认可目标完整 SHA 在实际默认分支上已完成且成功的 push CI；新增回归测试排除其他分支、旧 SHA、PR、进行中、失败和取消结果，不硬编码默认分支名。
+- 当日审计报告原锁定 Pillow 12.3.0 和 certifi 2026.7.22 共 9 条漏洞。定向升级为 Pillow 13.0.0 和 certifi 2026.10.19，保留其余依赖版本。依据：[Pillow 13.0.0](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html)、[certifi 公告](https://github.com/advisories/GHSA-6q48-6c7w-9gw2)。升级后本地完整检查通过：88 项测试、11 工具 stdio、格式/lint/类型/秘密/文档检查、构建及发行物审计，依赖审计零已知漏洞。
+- 发布使用受保护 v* 标签（禁止更新和删除）及 release 环境（限定 main，由仓库维护者审批，允许维护者审批自己的运行）。main 要求 PR、最新 quality (windows-latest) 成功、解决评审讨论、禁止强推和删除。当前为单维护者流程，GitHub 必需独立 approving reviews 数为 0；这不等于已经过另一位维护者的独立评审。
+- 正式发布证据由发布工作流关联实际标签、完整提交、默认分支 CI 与发布运行，包含全新运行依赖安装及协议验收。此处本地检查不能替代该目标提交的远端 CI/CD。
+- 本轮未调用收费接口，未修改用户实际 Host 配置；新版本真实 Host 联调、供应商收费接口和视觉业务验收仍未覆盖。

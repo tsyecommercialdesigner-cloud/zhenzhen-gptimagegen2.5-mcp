@@ -3,11 +3,13 @@ name = "zhenzhen-image"
 version = "0.3.0"
 description = "Stdio MCP for Zhenzhen GPT Image generation, editing and asynchronous tasks"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "mcp==2.2.0",
     "httpx==0.28.1",
-    "pillow==12.3.0",
+    "pillow==13.0.0",
     "openai==3.13.0",
     "httpx2==2.12.0",
     "python-dotenv==1.2.2",
@@ -31,6 +33,7 @@ include = [
     "/scripts",
     "/docs",
     "/.github",
+    "/LICENSE",
     "/README.md",
     "/MANUAL.md",
     "/AGENTS.md",
