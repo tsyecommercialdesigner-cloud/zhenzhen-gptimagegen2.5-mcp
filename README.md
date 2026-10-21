@@ -6,7 +6,7 @@ Python stdio MCP，面向 GPT Image 2.5 Flare / Sunburst，支持同步生成/�
 
 本项目面向 Windows 用户。PR / push CI 仅在 `windows-latest` 验收，手动发布工作流也使用 Windows；保留全部测试、构建、协议、安装与依赖检查。其他操作系统不在当前支持和 CI 验收范围内。
 
-默认安装目录 `C:\MCP\zhenzhen-gptimagegen2.5-mcp`。API Key 由 MCP 固定读取该目录 `.env`：从空 `.env.example` 安全复制、填写并限制权限；仅缺失时按“进程 → Windows 用户级”回退，空值或损坏配置失败。升级保留 `.env` 与权限，修改后重启实际 MCP 子进程。完整初始化、ACL、Host 配置及升级见 [MANUAL.md](MANUAL.md)。
+默认安装目录 `D:\MCP\zhenzhen-gptimagegen2.5-mcp`。API Key 由 MCP 固定读取该目录 `.env`：从空 `.env.example` 安全复制、填写并限制权限；仅缺失时按“进程 → Windows 用户级”回退，空值或损坏配置失败。升级保留 `.env` 与权限，修改后重启实际 MCP 子进程。完整初始化、ACL、Host 配置及升级见 [MANUAL.md](MANUAL.md)。
 
 默认是逆向分组；官转必须在每次生成/编辑调用显式声明：
 
@@ -28,13 +28,13 @@ Python stdio MCP，面向 GPT Image 2.5 Flare / Sunburst，支持同步生成/�
 安装后正常启动复用环境：
 
 ```powershell
-uv --directory 'C:\MCP\zhenzhen-gptimagegen2.5-mcp' run --no-sync python -m zhenzhen_image_mcp
+uv --directory 'D:\MCP\zhenzhen-gptimagegen2.5-mcp' run --no-sync python -m zhenzhen_image_mcp
 ```
 
 免费协议检查：
 
 ```powershell
-pwsh -NoProfile -File 'C:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1'
+pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1'
 if ($LASTEXITCODE -ne 0) { throw 'MCP 协议检查失败。' }
 ```
 
