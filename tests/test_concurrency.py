@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import sys
 import unittest
+from contextlib import closing
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -368,7 +369,7 @@ class AutomaticPollingTests(unittest.IsolatedAsyncioTestCase):
     async def test_legacy_v1_database_migrates_without_losing_idempotency(self):
         store = CheckpointStore()
         store.root.mkdir()
-        with sqlite3.connect(store.path) as db:
+        with closing(sqlite3.connect(store.path)) as db:
             db.execute(
                 "CREATE TABLE tasks (checkpointer TEXT,thread_id TEXT,task_id TEXT,fingerprint TEXT,"
                 "base_url TEXT,output_dir TEXT,group_name TEXT,status TEXT,provider_task_id TEXT,"
@@ -392,6 +393,7 @@ class AutomaticPollingTests(unittest.IsolatedAsyncioTestCase):
                 ),
             )
             db.execute("PRAGMA user_version=1")
+            db.commit()
         with patch("zhenzhen_image_mcp.checkpoints.time.time", return_value=100):
             self.assertFalse(store.claim("old", "thread", "item"))
         self.assertEqual(store.get("old", "thread", "item")["provider_task_id"], "old_provider")

@@ -9,6 +9,8 @@
 - 总耗时32.830秒。原始日志及防重标记保留在忽略路径 `.runtime/paid-concurrency-five/`，跟踪的脱敏证据为 [REAL-PAID-CONCURRENCY-2026-10-21.json](REAL-PAID-CONCURRENCY-2026-10-21.json)。无密钥、响应头、供应商图片URL或原始图片入库；未核对账户账单金额。
 - 根据用户“仅验证并发，成功后提交dev并创建PR”的授权进入交付流程；真实异步20项、其他模型/分组、Windows Host及保存失败原因均未在本轮扩展测试。
 
+提交后的 Windows CI 首轮运行发现迁移测试夹具只提交事务、未显式关闭 `sqlite3.connect` 连接，临时目录清理触发 WinError32。改为 `contextlib.closing` 配合显式事务提交，释放夹具连接；保留原迁移断言与全部测试，不涉及新的收费调用。
+
 ## 2026-10-21 云端开发：5路同步、20项异步与自动查询（未发布）
 
 分支 `feature/task-concurrency-autopoll`，Python 3.12.14、uv 0.12.23、Linux 云环境；保持现有依赖和版本声明，无新增数据库服务。下列验证均为免费协议/受控上游测试，不代表供应商真实并发能力或 Windows/桌面 Host 验收。
