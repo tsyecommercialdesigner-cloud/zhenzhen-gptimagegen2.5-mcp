@@ -1,108 +1,95 @@
-# Zhenzhen Image MCP 使用手册
+# Zhenzhen Image MCP 交付与使用手册
 
-适用版本：0.3.1；是否已公开发布，以实际 GitHub Release 记录为准。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
+适用版本 **v0.3.1**。默认从 [项目 GitHub](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp) 的已发布版本安装到 D 盘。首次使用按第 1–4 节操作；已有安装按第 5 节更新。所有安装、编辑配置和业务示例都需用户自行按需执行，阅读本手册不会触发它们。
 
 ## 1. 环境准备
 
-### 部署与名称
+### 部署方式与参数表
 
-实际仓库：<https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp>。源码已由 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 合入 main；各发布版本的远端 CI 以 Release 证据所链接的实际提交为准。正式安装必须选该仓库 Releases 中已通过检查的版本及完整 SHA，不能将下文候选号当作已存在标签。
+本项目只提供 Python stdio 后端，没有原生 HTTP 监听入口。直接使用的成员在实际运行 MCP 的 Windows 机器上安装；仅消费已部署代理的 Host 只连接 URL，不 clone 后端、不安装 uv，也不持有供应商 API Key。Cherry Studio 的网关是可选外部组件。
 
-本项目是 Python **stdio MCP Server**。本地成员在运行 Host 的机器安装它；也可由 Cherry Studio 启动后，通过其 MCP Proxy 供其他 Host 使用。仅连接代理的用户不安装后端、不执行 uv、不复制后端 API Key。项目没有独立 HTTP 监听服务或容器部署入口，代理的部署与安全由网关维护者负责。
-
-| 项目 | 本项目的值 |
+| 参数 | 本项目的值与来源 |
 |---|---|
-| 开发目录 | `E:\collaborative-workspace\zhenzhen-gptimage2.5-mcp`；不因成员命名改动而迁移 |
-| 成员项目目录原名 | `zhenzhen-gptimagegen2.5-mcp`（用户约定） |
-| Windows 默认安装目录 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp` |
-| Python 发行包 / 版本 | `zhenzhen-image` / `0.3.1`，来自 `pyproject.toml` |
-| Python 模块 / 入口 | `zhenzhen_image_mcp` / `python -m zhenzhen_image_mcp` |
-| 本地配置服务标识 | `zhenzhen-gptimagegen2-5-mcp` |
-| 通用代理配置服务标识 | `zhenzhen-gptimagegen2-5-mcp-proxy` |
-| DSH 代理别名 | `zhenzhen-gptimagegen2-5-proxy`；一对一映射上述代理标识，满足 32 字符限制 |
-| MCP 内部 serverInfo.name | `zhenzhen-gptimagegen2-5-mcp`，与本地配置名称一致 |
-| 业务 API | `https://ai.t8star.org/v1`；OpenAI 兼容 Images 接口 |
-| 后端密钥字段 | `ZHENZHEN_GPTIMAGEGEN_API_KEY` |
-| 后端密钥文件 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp\.env` |
-| 代理网关令牌变量 | `CHERRYSTUDIO_API_GATEWAY_API_KEY`；保存完整原始令牌，不含 `Bearer ` |
+| 项目目录原名 | zhenzhen-gptimagegen2.5-mcp，用户约定 |
+| GitHub origin | https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git |
+| 已发布标签 | [v0.3.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases/tag/v0.3.1) |
+| 标签完整提交 | `f5011efcb0a9bd4353c106811d71645e02ff74fe` |
+| 默认安装 / 密钥文件 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp` / 该目录 `.env` |
+| 发行包 / 版本 | `zhenzhen-image` / `0.3.1`，来自 pyproject.toml |
+| 模块与入口 | `zhenzhen_image_mcp` / `python -m zhenzhen_image_mcp` |
+| 本地服务名 | `zhenzhen-gptimagegen2-5-mcp` |
+| 通用消费代理服务名 | `zhenzhen-gptimagegen2-5-mcp-proxy` |
+| DSH 消费代理别名 | `zhenzhen-gptimagegen2-5-proxy`，与通用代理一对一映射，满足 32 字符上限 |
+| 供应商地址 / 后端密钥 | `https://ai.t8star.org/v1` / `ZHENZHEN_GPTIMAGEGEN_API_KEY` |
+| 可选网关令牌变量 | `CHERRYSTUDIO_API_GATEWAY_API_KEY`，原始令牌，不包含 `Bearer ` |
 
-服务配置名称统一将点号换为连字符；安装目录、版本、模型、模块、URL 和网关实际路由 ID 保持各自原值。更新旧配置时先检查新旧名称是否同时存在，合并为一个实例，避免重复启动或重复付费；不要通过全局替换修改整个配置文件。
+仅服务名将点号换成连字符，安装目录保留 `2.5`；不要全局替换版本、模块、文件名或 URL。serverInfo.name 与本地服务名一致。主分支包含后续文档时，不将其 SHA 当作 v0.3.1 的发布 SHA。
 
-### 运行环境与兼容范围
+### 前置条件与验证范围
 
-| 项目 | 要求 / 已验证范围 |
+| 项目 | 要求 / 证据 |
 |---|---|
-| 平台 | 当前支持范围为 Windows / PowerShell 7；CI 与发布验收仅使用 Windows，其他系统不在当前支持范围 |
-| Python | `>=3.12,<3.13`；`.python-version` 固定 `3.12.14` |
-| Git / 包管理器 | Git（获取发布版本）、uv 0.12.9（本轮实测）；需能访问 Python 包源，安装时联网，日常启动 `--no-sync` |
-| 构建 | hatchling `1.27.0`；纯 Python `src/` 布局，不需要 Node.js、npm 或额外 SDK extra |
-| MCP SDK | 官方 Python SDK `mcp==2.2.0`，使用 `MCPServer` |
-| 业务 / HTTP SDK | `openai==3.13.0`、`httpx==0.28.1`、`httpx2==2.12.0` |
-| 其他主要运行依赖 | Pillow `13.0.0`、python-dotenv `1.2.2`、PyJWT `2.15.0`；TLS 证书依赖 certifi 锁定 `2026.10.19`，这些依赖按安全公告修复，全部版本以 `uv.lock` 为准 |
-| 协议与传输 | 本轮实际 stdio legacy 客户端协商 `2025-11-25`，检查 initialize/initialized；SDK 主版本不等于协议版本 |
-| Host | Cherry Studio 本地 / 代理、Codex、Claude Code、DSH 的配置见第 4 节；GUI 与代理实际连接未在本轮验证 |
-| CLI 依据 | 2026-10-14 历史 help 核对：Codex `0.153.0`、Claude Code `2.1.258`、DSH `0.1.1-rc.2`；升级后重新核对帮助 |
-| Codex 特定实测 | 2026-10-15 原生 Codex `0.162.0-alpha.17.2` 隔离测试确认 `env_vars` 转发；不代表全部版本 |
+| 平台 | Windows；PowerShell 7；其他系统不在项目支持及 CI 范围内 |
+| Python / 包管理器 | Python `>=3.12,<3.13`；项目固定 3.12.14；uv 0.12.9 已验证；另需 Git |
+| 构建与依赖 | hatchling 1.27.0，mcp 2.2.0，openai 3.13.0；全部依赖由 uv.lock 锁定，无 SDK extra、Node.js 或 npm 后端安装步骤 |
+| 协议 / 传输 | 实际 SDK legacy stdio 客户端协商 2025-11-25，验证 initialize/initialized；不从 SDK 主版本推断协议版本 |
+| 已验证 Host | Codex 桌面内置 app-server 0.163.0-alpha.10.2 独立会话与用户重启后的实际 Codex 会话，11 工具及免费指南通过 |
+| CLI 命令依据 | 2026-10-21 本机帮助：Codex 0.153.0、Claude Code 2.1.303、DSH 0.2.1-rc.2；只读检查帮助不等于完成注册或连接 |
+| DSH YAML 依据 | 本机 `@deepseek-ai/dsh-mcp-client` 0.2.1-rc.2 的 schema/源码；App 和 Multica 自带运行时版本须分别核对 |
+| 未验证范围 | 新版 Cherry Studio/代理、DSH 三客户端、Claude/Claude-3p 的全面真实联调，九种 CLI/Shell 执行，以及 MCP 2026-07-28 请求级元数据模式 |
 
-这里只承诺上述实际验证的旧协议兼容路径；未验证 MCP `2026-07-28` 请求级元数据模式，未声明完整协议版本矩阵。DSH 桥接仅按 Tools 使用，不推定它暴露 Prompts 或 Resources。Claude-3p 的 schema/连接尚未核实，见第 4 节适用性说明。
+安装前确认 D 盘空间及实际运行账号权限。获取源码需访问 GitHub，uv 安装需访问锁定包源及必要的 Python 下载源；绘图和图片下载分别需要供应商 API 与公开图片域名联网。使用自己的 Git 授权，不在 URL 放令牌；不关闭 TLS 校验或删锁排障。GUI 使用的 PATH/环境来自它的父进程，修改后需要重启相关 Host。
 
-依赖安装与业务联网是两件事：安装需访问锁定包源及可能的 Python 下载源；绘图需访问业务 API，落盘还需访问供应商返回的公开图片域名。沿用成员已批准的代理、TLS 证书与包源配置，不为排障关闭证书验证或自动升级锁文件。Windows 用户级变量的兼容读取使用当前运行账号的 `HKCU\Environment`；默认 `.env` 流程不写注册表，也不需要管理员权限。
+### 凭据与可选设置
 
-### 配置读取与当前差异
+默认从 **实际项目根 `.env` → MCP 进程环境 → Windows 当前用户环境** 逐字段读取 API Key。源码/editable 从模块位置定位；项目 venv wheel 从安装布局定位并核对本项目 pyproject.toml，不搜索 Host 工作目录，也不支持无项目根的全局安装。
 
-默认把 API Key 放进后端项目 `.env`，由 MCP 自己读取；Host 的 JSON/TOML/YAML 默认不传后端密钥。源码/editable 按模块所属根目录定位；项目 `.venv` 中的 wheel 按固定虚拟环境父目录定位，并核对 pyproject.toml 存在。不搜索 Host 工作目录或祖先文件，不支持无项目根的全局 wheel 安装。
-
-| 来源 / 状态 | 当前 0.3.1 行为 |
+| 状态 | 行为 |
 |---|---|
-| 项目 `.env` 定义有效 Key | 使用文件值，覆盖环境中的值 |
-| 文件不存在 / 未定义字段 | 先读进程变量，仅其未定义时再兼容 Windows 当前用户级变量；非 Windows 读进程变量 |
-| 文件字段为空、重复、格式错误、不可读 | 明确失败，不回退旧密钥；`get_model_guide` 用 `key_present=false` 表示校验未通过 |
-| 所有来源缺失 | 绘图请求失败；本地发现及不访问业务的协议检查仍可运行 |
+| `.env` 有有效字段 | 使用文件值，覆盖环境值 |
+| 文件或字段缺失 | 查进程变量，真正未定义时再查当前运行账号 HKCU 用户变量 |
+| 字段为空/重复/非法，文件不可读/解析失败 | 明确失败，不回退旧密钥；指南只返回 key_present=false，不显示值 |
+| 全部来源缺失 | 业务请求失败；免费发现/协议检查仍可进行 |
 
-优先级已统一为 **项目 `.env → MCP 进程 → Windows 当前用户级`**。任一选中来源已定义但为空或非法时均报错，不继续找旧值；只有真正缺失才回退。0.1.2 的“用户级先于进程”行为已变更，环境兼容模式升级时请核对。
+`.env` 使用 UTF-8（可带 BOM），最大 64 KiB，允许注释和引号；不执行内容，不展开 `${VAR}`。密钥填供应商原值，不自行加 Bearer，内部不能含空白或控制字符；环境来源被选中后同样不能以空值继续回退。只有 API Key 从 `.env` 读取，其他可选设置来自 MCP 进程环境：
 
-`.env` 需为 UTF-8（可带 BOM），最大 64 KiB；允许注释、单/双引号，不执行其中内容、不展开 `${VAR}`。密钥按实际供应商原值填写，内部不得含空白或控制字符；不自行加 `Bearer `。只有 API Key 从 `.env` 读取；下列可选设置来自 **MCP 进程环境**，不要误写进 `.env` 后期待生效：
-
-| 变量 | 默认 / 约束 |
+| 变量 | 默认值与限制 |
 |---|---|
-| `ZHENZHEN_GPTIMAGEGEN_BASE_URL` | `https://ai.t8star.org/v1`；HTTPS、路径为 `/v1`，无账号密码、query 或 fragment |
-| `ZHENZHEN_GPTIMAGEGEN_OUTPUT_DIR` | 当前运行用户 `Pictures\ZhenzhenImage`；绝对本地目录 |
-| `ZHENZHEN_GPTIMAGEGEN_TIMEOUT` | 180 秒；10–600 秒 |
+| ZHENZHEN_GPTIMAGEGEN_BASE_URL | https://ai.t8star.org/v1；HTTPS、/v1，无凭据、query、fragment |
+| ZHENZHEN_GPTIMAGEGEN_OUTPUT_DIR | 当前运行账号 Pictures\ZhenzhenImage，必须为绝对本地目录 |
+| ZHENZHEN_GPTIMAGEGEN_TIMEOUT | 180 秒，可设 10–600 秒 |
 
-每次生成/编辑调用的 `group` 默认 `reverse`。用户使用官转时必须显式传 `group="official"`，扩展参数放 `official_options`；格式定义见第 8 节。该声明只控制本地参数校验，不发送上游、不改变 Key 的供应商后台分组；账户权限仍以实际响应为准。
+`.env` 修改后重启实际 MCP 子进程，不承诺热加载。不因迁移到文件配置自动删除已有环境变量；有效文件仍优先。Host 默认不传后端密钥；网关认证另行设置。
 
 ## 2. 项目初始化
 
-### 从 GitHub 固定版本安装
+### 固定发布版本 clone 与锁定安装
 
-默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。以下命令仅用于 Releases 中已公开的版本；如尚无目标版本，请勿猜测标签。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不凭元数据推测发布标签。
+下例已填入真实仓库、v0.3.1 及完整 SHA。它只创建父目录，clone 自动创建项目目录；目标已存在则停止，请走第 5 节更新。发布依据见 Release 的 release-evidence.json：main CI 39544661935、发布流程 39544878036，另有该标签全新安装验收。仓库不使用必须额外初始化的 submodule/LFS 运行文件。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $RepositoryUrl = 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git'
-$ReleaseTag = Read-Host '输入 Releases 中已通过 CI 的实际版本标签'
-$ExpectedSha = Read-Host '输入该 Release 记录的完整 40 位提交 SHA'
-if ($ReleaseTag -notmatch '^v\d+\.\d+\.\d+$' -or $ExpectedSha -notmatch '^[a-fA-F0-9]{40}$') { throw '版本或 SHA 格式不正确。' }
+$ReleaseTag = 'v0.3.1'
+$ExpectedSha = 'f5011efcb0a9bd4353c106811d71645e02ff74fe'
 $InstallRoot = 'D:\MCP'
 $ProjectDir = Join-Path $InstallRoot 'zhenzhen-gptimagegen2.5-mcp'
-if (Test-Path -LiteralPath $ProjectDir) { throw '项目目录已存在，请按第 5 节更新，不能覆盖安装。' }
+if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按更新流程处理。' }
 New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
 git clone --branch $ReleaseTag --single-branch $RepositoryUrl $ProjectDir
-if ($LASTEXITCODE -ne 0) { throw '获取发布版本失败，停止安装。' }
+if ($LASTEXITCODE -ne 0) { throw '仓库获取失败，停止安装。' }
 $ActualSha = git -C $ProjectDir rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $ActualSha -ne $ExpectedSha) { throw '提交 SHA 与发布记录不符，停止安装。' }
+if ($LASTEXITCODE -ne 0 -or $ActualSha -ne $ExpectedSha) { throw '发布 SHA 不符，停止安装。' }
 Set-Location -LiteralPath $ProjectDir
 uv sync --locked --no-dev
-if ($LASTEXITCODE -ne 0) { throw '锁定依赖安装失败，请先解决安装错误再启动 MCP。' }
+if ($LASTEXITCODE -ne 0) { throw '锁定依赖安装失败，停止启动。' }
 ```
 
-clone 自动创建项目目录，根目录直接包含 `src/`、`pyproject.toml`、`uv.lock`、版本文件、手册、模板及检查脚本。源码仓库同时有开发文档和测试是正常行为；运行依赖安装到成员自己的 `.venv`。Python 安装阶段由 hatchling 构建应用，不运行 `uv init`、不用裸 pip、不添加不存在的 SDK extra。日常启动不构建或安装。Linux/macOS 须使用该机器绝对路径；本轮未实测跨平台成员安装。
+应用和依赖安装到项目 `.venv`；固定标签处于 detached HEAD 正常。没有 `uv init`、全局 pip 或可选 extra 步骤，也不在日常启动时重新安装。源码仓库包含测试和开发文档，不应为模拟成员 ZIP 而删除它们。仅收到明确提供的可选 ZIP 时使用第 6 节。
 
-仅当明确收到可选 ZIP 时，使用第 6 节流程；ZIP 不再是默认初始化的前提。已有旧版平铺包请按其版本手册操作，不与 0.3.1 的唯一顶层目录结构混用。
+### 创建私有 `.env` 与权限
 
-### 创建并填写私有 `.env`
-
-以下命令保留已有文件；只在缺失时复制空值模板。记事本打开后，填写真实值、保存，再继续可用性检查。不要把密钥贴到聊天、共享脚本或命令参数里。
+只在文件不存在时复制空模板，已有文件保持原样。在编辑器中填写真实 Key，保存 UTF-8；不要将值粘贴进聊天、公共脚本或命令参数。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -110,83 +97,84 @@ $ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 $EnvPath = Join-Path $ProjectDir '.env'
 $ExamplePath = Join-Path $ProjectDir '.env.example'
 if (Test-Path -LiteralPath $EnvPath) {
-  Write-Host '保留已有 .env，请核对所需字段。'
+  Write-Host '保留已有 .env，请核对字段。'
 } else {
-  if (!(Test-Path -LiteralPath $ExamplePath -PathType Leaf)) { throw '缺少 .env.example，请核对交付文件。' }
+  if (!(Test-Path -LiteralPath $ExamplePath -PathType Leaf)) { throw '缺少空密钥模板。' }
   [IO.File]::Copy($ExamplePath, $EnvPath, $false)
 }
-notepad.exe $EnvPath
+Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $EnvPath) -ErrorAction Stop
 ```
 
-空值模板的字段如下，仅私有 `.env` 填真实值：
+模板只有一个空字段，私有文件中必须填值；复制后直接留空会明确失败，不会退回环境旧值。
 
 ```ini
 ZHENZHEN_GPTIMAGEGEN_API_KEY=
 ```
 
-`.env` 为明文。检查文件 ACL；确认当前账号确为运行 MCP 的账号后，可授予其读写并移除继承，仅保留必要管理员/服务账号的显式权限。先核对输出，勿给 Everyone 或无关账号授权；不同账号启动的 Host 需按实际账号安排权限。
+`.env` 是明文，应仅对实际运行 MCP 的账号和必要管理账号开放。先检查 ACL；以下可选调整只适用于当前终端账号就是服务账号的情况，保留必要显式权限，不给 Everyone 授权。不同服务账号须由管理员按实际账号调整，不能照抄账号名。
 
 ```powershell
+$ErrorActionPreference = 'Stop'
 $EnvPath = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\.env'
 $McpAccount = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-Get-Acl -LiteralPath $EnvPath | Format-List Owner, AccessToString
-# 仅确认上述账号就是 MCP 运行账号后执行；不删除已有显式权限：
-icacls.exe $EnvPath /grant:r "${McpAccount}:(R,W)"
-if ($LASTEXITCODE -ne 0) { throw '设置文件权限失败。' }
-icacls.exe $EnvPath /inheritance:r
-if ($LASTEXITCODE -ne 0) { throw '移除继承失败，请检查 ACL。' }
-Get-Acl -LiteralPath $EnvPath | Format-List Owner, AccessToString
+icacls $EnvPath
+if ($LASTEXITCODE -ne 0) { throw 'ACL 检查失败。' }
+# 仅确认当前账号就是运行账号、且已核对必要显式权限后执行：
+icacls $EnvPath /grant:r "${McpAccount}:(R,W)" /inheritance:r
+if ($LASTEXITCODE -ne 0) { throw 'ACL 修改失败。' }
+icacls $EnvPath
+if ($LASTEXITCODE -ne 0) { throw 'ACL 复核失败。' }
 ```
-
-修改后重启实际 MCP 子进程：在 Host 停用/启用该服务，必要时退出并重启 Host。无需重新设置全局环境变量。升级、回滚与清理均保留 `.env` 及其 ACL；私有备份也必须有相同访问限制，禁止进入 ZIP 或 Git。
 
 ## 3. 可用性测试
 
-成员运行以下脚本，默认总检查超时 30 秒，可选范围 1–300 秒：
+后端安装者执行实际存在的免费检查脚本，不向供应商发请求：
 
 ```powershell
 pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -TimeoutSeconds 30
-if ($LASTEXITCODE -ne 0) { throw 'MCP 可用性检查失败，请先排障。' }
+if ($LASTEXITCODE -ne 0) { throw '协议检查失败，请先排障。' }
 ```
 
-成功退出码为 0，输出包含 `passed=true`、`transport=stdio`、`tools=11`、`prompts=1`、`resources=1`、`paid_calls=0`；失败返回非零并输出脱敏诊断。脚本从不同工作目录启动真实子进程，检查旧协议初始化、能力发现、Prompt/Resource 访问、免费模型建议及非法模型拒绝，无绘图费用。它不证明 Key 已获供应商授权；`get_model_guide.key_present=true` 也只说明凭据校验通过。
+成功退出码 0，输出含 passed=true、transport=stdio、tools=11、prompts=1、resources=1、paid_calls=0。它在不同工作目录下启动实际子进程，检查 legacy 初始化、发现、资源/提示访问、免费指南及非法模型在联网前拒绝；失败非零并返回脱敏诊断。缺少 Key 不妨碍发现，key_present=true 也不证明供应商鉴权成功。
 
-需要检查已运行的代理时，先按第 4 节向当前 shell 输入网关令牌，然后运行：
+代理维护者可在当前 shell 输入网关原始令牌后运行完整能力检查；本脚本需要本地后端运行环境，仅连接远端的用户直接在自己的 Host 检查工具与免费指南即可：
 
 ```powershell
-$ProxyUrl = Read-Host '输入实际 MCP Proxy 完整 URL（包含真实服务器 ID）'
-if ([string]::IsNullOrWhiteSpace($ProxyUrl)) { throw 'URL 不能为空。' }
+$ErrorActionPreference = 'Stop'
+$ProxyUrl = Read-Host '输入网关实际 MCP URL（含真实服务器 ID）'
+$GatewayKey = Read-Host '输入原始网关令牌（不含 Bearer）' -MaskInput
+if ([string]::IsNullOrWhiteSpace($ProxyUrl) -or [string]::IsNullOrWhiteSpace($GatewayKey)) { throw 'URL 和令牌不能为空。' }
+$env:CHERRYSTUDIO_API_GATEWAY_API_KEY = $GatewayKey
+Remove-Variable GatewayKey
 pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -ProxyUrl $ProxyUrl -TimeoutSeconds 30
 if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 ```
 
-此脚本需要本地成员运行环境，供后端维护者使用；仅连接远端的用户在自己的 Host 验证发现与 `get_model_guide`，不为检查而安装整个后端。不同代理是否桥接 Prompt/Resource 需先核对；本脚本要求完整能力，Tools-only 桥接不能据此判定后端故障。
+此脚本的网关令牌读取为 Windows 用户变量优先、再进程变量，区别于业务 Key；如存在旧用户变量，先核对实际来源，不打印值或自动删除。它要求代理也桥接 Prompt/Resource；Tools-only 桥接不应据此判定后端不可用。
 
-| 验收内容 | 证据与界限 |
+| 证据类别 | 已验证与未验证边界 |
 |---|---|
-| 源码与资源契约 | 第 7 节来自 `docs/mcp-inventory.json` 的发现清单；本轮核对实际发现 |
-| 文档配置 | JSON/TOML/YAML 与 PowerShell 语法检查，模板与文档逐字一致；详见开发文件 `docs/VALIDATION.md` |
-| SDK 协议与错误 | `tests/test_protocol.py` 覆盖暂时查询失败后恢复、NOT_START、等待预算、保存及收费 POST 不重试；使用受控替身 |
-| 批量并发与幂等 | `tests/test_batch.py` 通过真实 MCP SDK 与替身 HTTP 验证 10 项并发提交、持久化防重、跨进程提交权、取消/不确定状态和查询恢复；不代表供应商实测 |
-| 凭据加载 | `tests/test_config_env.py` 覆盖文件优先、非法文件失败、工作目录隔离等；文件/进程/用户级优先顺序、空值失败和工作目录隔离已覆盖 |
-| Host / 业务 | 本轮没有真实 GUI/代理联调、Bash/Zsh 执行或收费生成；不将静态检查等同于连接或业务通过 |
+| 静态 | JSON/TOML/YAML、PowerShell AST、模板一致性与秘密扫描；不执行配置示例 |
+| 隔离/协议 | 88 项既有回归、11 工具发现，10 项有界并发、幂等、故障恢复和配置优先级；用受控上游，无费用 |
+| 真实 Host | v0.3.1 本机 Codex stdio 与免费指南已验收；其他 Host/代理未全面复验 |
+| 真实供应商 | 已授权 Flare 两项异步文生图均 SUCCESS/saved，含 NOT_START 恢复；未新增收费测试，十图真实并发及官转高级参数仍未验证 |
 
-开发环境先 `uv sync --locked`；本地与 CI 共用 `uv run --no-sync python scripts/check.py --build --audit`，包含格式/lint、类型、文档、秘密、单元/协议、构建及联网依赖审计。单独测试可用 `uv run --no-sync python -m unittest discover -s tests -v`。未启用 spec-kit / Beads，本次沿用源码、问题记录和测试作为追溯依据，不虚构需求或任务标识。
+验收标识 G1–G9 见 [重构方案](docs/REFACTOR-PLAN.md)，B1–B8 见 [批量契约](docs/ASYNC-BATCH-PLAN.md)，历史证据见 [验证记录](docs/VALIDATION.md) 与 [D 盘验收](docs/D-DRIVE-ACCEPTANCE.md)。88 项和真实 Host/业务是已完成记录，不冒充每次文档修改都重新执行。开发检查入口为 `uv run --no-sync python scripts/check.py --build --audit`，需开发环境先 `uv sync --locked`；成员不必安装开发依赖执行回归。
 
 ## 4. 客户端配置
 
-选择 **直接 stdio** 或 **消费代理**；同一会话避免同时启用两条重复能力。下表覆盖六项配置要求，后续按 Host 操作。
+同一 Agent 会话选择直接 stdio 或消费代理，避免同一后端重复启用。添加后都要保存、启用、发现 11 个工具、绑定目标助手/Agent、按需授权工具，再免费调用 get_model_guide。真正绘图需要另行明确授权。
 
-| 配置项 | 使用范围 |
+| 六项覆盖 | 本项目说明 |
 |---|---|
-| 本地 MCP JSON | Cherry Studio 等支持相应 JSON schema 的 Host；模板一 |
-| HTTP / 代理 JSON | 支持 `streamableHTTP` 及相应认证机制的 Host；模板二 |
-| Codex TOML | 本地 stdio 与代理各一份，无须假定 Codex 自动读取 `.mcp.json` |
-| Claude Code / Claude-3p JSON | Claude Code 用户作用域配置；Claude-3p 路径与快捷打开提供，schema 未核实不冒充已支持 |
-| DSH profile YAML | `desktop` / `web` 共用一种配置结构，分别给直连和消费代理版本 |
-| CLI × 三种 Shell | Codex、Claude Code、DSH 九种示例；按已核对 CLI 选项编写，未声明九种执行均通过 |
+| 本地 MCP JSON | 完整模板见 4.1，用于接受该 schema 的 Host |
+| HTTP/代理 JSON | 完整模板见 4.2；只有外部代理，本项目无原生 HTTP |
+| Codex TOML | 直接 stdio 与消费代理二选一 |
+| Claude Code / Claude-3p JSON | 先给两配置文件快捷打开；Claude Code 给完整 JSON，Claude-3p schema 未核实，明确不冒称支持 |
+| DSH YAML | web、desktop、multica 三种独立 profile；每种传输共用一份实例 |
+| CLI 三种 Shell | Codex、Claude Code、DSH × PowerShell 7/Bash/Zsh；帮助已核对，九种真实执行未全面验证 |
 
-### 模板一：本地 MCP JSON
+### 4.1 本地 MCP JSON
 
 <!-- LOCAL_CONFIG_START -->
 ```json
@@ -209,7 +197,8 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 ```
 <!-- LOCAL_CONFIG_END -->
 
-### 模板二：消费代理 Host 的 MCP JSON
+
+### 4.2 消费代理 Host 的 MCP JSON
 
 <!-- PROXY_CONFIG_START -->
 ```json
@@ -227,45 +216,45 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 ```
 <!-- PROXY_CONFIG_END -->
 
-将 `<cherrystudio_mcp_proxy_server_id>` 替换为网关为该后端分配的真实 ID，不能用服务显示名推导。端口 `23333` 和 `/v1/mcps/<id>/mcp` 仅用于确实提供该路由的 Cherry Studio 版本；从其界面取得实际地址，不自动退回 SSE。`${CHERRYSTUDIO_API_GATEWAY_API_KEY}` **只是要求 Host 解析的占位表达式**，JSON 本身不插值；不支持此语法时，用 Host 的私有请求头设置填入完整 `Bearer 原始令牌`，或采用后文 Codex / DSH 的专用机制。不要将占位字符串直接发给网关，也不要重复添加 Authorization。
+把 `<cherrystudio_mcp_proxy_server_id>` 换成网关界面分配的真实路由 ID，不从服务显示名推导。23333 和该路径仅适用于提供此路由的 Cherry Studio 版本，端口与完整 URL 以网关实际设置为准。
 
-保护已有配置，复制两个模板到本地私有配置：
+`${CHERRYSTUDIO_API_GATEWAY_API_KEY}` 需要消费 Host 明确支持展开；JSON 本身不插值。不支持时使用该 Host 的私有认证界面，或后文 Codex 的 bearer_token_env_var、DSH 的 !!js；不要把表达式原样当令牌发出。Authorization 只加一次 Bearer，HTTP Host 不设置后端 command/args/env/cwd。
 
-```powershell
-$ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
-$ConfigNames = @('.mcp.json', '.cherrystudiomcpproxy.mcp.json')
-foreach ($Name in $ConfigNames) {
-  if (Test-Path -LiteralPath $Name) { throw "配置已存在，请备份并手工合并：$Name" }
-}
-foreach ($Name in $ConfigNames) {
-  [IO.File]::Copy((Join-Path $PWD "$Name.example"), (Join-Path $PWD $Name), $false)
-}
-```
-
-只需其中一种时删去另一项。Host 不一定自动读取这些文件，应通过其导入功能或逐项填写。真实配置可含秘密，不随项目交付。
-
-### Cherry Studio：添加、启用与代理
-
-1. 在设置的 MCP 服务器入口添加 stdio 服务。名称 `zhenzhen-gptimagegen2-5-mcp`，command `uv`，args 按模板一逐项填写；支持 JSON 导入时可导入本地配置。无 `cwd`，无后端密钥 `env`。
-2. 保存并启用，确认发现 11 个工具，将它绑定目标助手/Agent；调用 `get_model_guide` 检查模型建议和 `key_present`。若 Key 不存在，回后端项目编辑 `.env` 并重启服务。
-3. 需要代理时，在兼容版本启用 API Gateway / MCP Proxy，取得完整网关令牌及该服务实际路由 ID。后端先保持可用，再验证代理；当前安装的 GUI 入口名称、版本能力与实际代理连接未在本轮实测。
-4. 消费代理的 Host 添加 HTTP/Streamable HTTP 服务，填写实际 URL，按该 Host 机制设置一个 Authorization，保存、启用并绑定助手，再检查工具与免费调用。仅开启网关不代表消费方已配置完成。
-
-### Codex：config.toml
-
-用户作用域路径为 `$CODEX_HOME/config.toml`，未自定义时为 `%USERPROFILE%\.codex\config.toml`。在已有文件中合并服务表；下面命令先备份并打开，不覆盖其他设置：
+在后端项目中安全复制模板到私有配置，只用一种时删去另一项；已存在时停止并手工合并：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$CodexDir = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }
-$ConfigPath = Join-Path $CodexDir 'config.toml'
-if (!(Test-Path -LiteralPath $ConfigPath -PathType Leaf)) { throw '配置尚不存在，请先初始化 Codex 并核对实际 CODEX_HOME。' }
-Copy-Item -LiteralPath $ConfigPath -Destination "$ConfigPath.$([Guid]::NewGuid().ToString('N')).bak" -ErrorAction Stop
-notepad.exe $ConfigPath
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$Names = @('.mcp.json', '.cherrystudiomcpproxy.mcp.json')
+foreach ($Name in $Names) {
+  if (Test-Path -LiteralPath (Join-Path $ProjectDir $Name)) { throw "已有配置，请先备份并手工合并：$Name" }
+}
+foreach ($Name in $Names) {
+  [IO.File]::Copy((Join-Path $ProjectDir "$Name.example"), (Join-Path $ProjectDir $Name), $false)
+}
 ```
 
-本地 stdio：
+### Cherry Studio：后端与消费代理的操作
+
+1. 在设置的 MCP 服务器入口新增 stdio，名称与 command/逐行 args 按本地模板；支持相应 JSON 导入时导入模板，无 cwd、无业务 Key env。界面命名因版本而异，本轮未重测 GUI。
+2. 保存、启用并检查 11 个工具；在目标助手/Agent 中选择此服务，调用 get_model_guide，必要时修复项目 .env 后重启实际 MCP。
+3. 需要代理才在兼容版本启用 API Gateway/MCP Proxy，记录实际 URL、路由 ID、原始网关令牌。先完成后端验收，再连接代理。
+4. 消费 Host 选择 HTTP/Streamable HTTP，填实际 URL 和该 Host 支持的私有认证；保存、启用、绑定助手并发现工具，调用免费指南。仅开启网关不能代替消费 Host 配置；只消费远端的人不安装后端。
+
+### Codex：用户级 config.toml
+
+优先实际 CODEX_HOME，否则 `%USERPROFILE%\.codex\config.toml`。只合并目标服务表，不覆盖其他设置；命令先检查、唯一备份、再打开文件：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$CodexRoot = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) { Join-Path $env:USERPROFILE '.codex' } else { $env:CODEX_HOME }
+$ConfigPath = Join-Path $CodexRoot 'config.toml'
+if (!(Test-Path -LiteralPath $ConfigPath -PathType Leaf)) { throw '请先初始化 Codex 并核对 CODEX_HOME。' }
+[IO.File]::Copy($ConfigPath, "$ConfigPath.$([guid]::NewGuid().ToString('N')).bak", $false)
+Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $ConfigPath) -ErrorAction Stop
+```
+
+直接 stdio：
 
 ```toml
 [mcp_servers."zhenzhen-gptimagegen2-5-mcp"]
@@ -283,7 +272,7 @@ startup_timeout_sec = 30
 tool_timeout_sec = 600
 ```
 
-消费代理：
+消费代理使用另一个服务表：
 
 ```toml
 [mcp_servers."zhenzhen-gptimagegen2-5-mcp-proxy"]
@@ -293,19 +282,19 @@ startup_timeout_sec = 30
 tool_timeout_sec = 600
 ```
 
-HTTP 表不设置 `command/args/cwd/env`。`bearer_token_env_var` 填变量名；变量值是完整原始网关令牌，由 Codex 添加一次 `Bearer `。当前 shell 安全输入后从同一 shell 启动 Codex，避免 GUI 父进程没有继承变量：
+bearer_token_env_var 填环境变量名，变量值为不含 Bearer 的原始网关令牌。以下只设置当前父进程，从同一 shell 启动 Host；桌面 App 要完全退出再从该环境启动，或用该版本支持的私有认证设置，不能假定已运行 GUI 自动继承：
 
 ```powershell
-$GatewayKey = Read-Host '输入完整网关令牌（不含 Bearer 前缀）' -MaskInput
-if ([string]::IsNullOrWhiteSpace($GatewayKey)) { throw '网关令牌不能为空。' }
+$GatewayKey = Read-Host '原始网关令牌（不含 Bearer）' -MaskInput
+if ([string]::IsNullOrWhiteSpace($GatewayKey)) { throw '令牌不能为空。' }
 $env:CHERRYSTUDIO_API_GATEWAY_API_KEY = $GatewayKey
 Remove-Variable GatewayKey
 codex
 ```
 
-保存后重新加载 MCP 或重启实际 Host，会话中用 MCP 列表 / `/mcp`（若版本支持）检查启用状态、11 个工具与权限，再调用 `get_model_guide`。桌面 GUI 若不能从该 shell 继承，应使用该版本明确支持的私有认证设置；不默认写用户级全局变量。
+保存后重启/重新加载该 MCP，检查启用状态、11 个工具与权限，调用 get_model_guide。Codex 不自动将模板 .mcp.json 当作 TOML 配置。
 
-**环境兼容方案（非默认）：**只有刻意不在项目 `.env` 定义密钥字段时，才需要给 stdio 表追加 `env_vars`。先检查第 1 节优先级；有效进程值先于用户级值，空值或非法值不回退。以下是同一服务表的可选字段片段，不是额外服务器：
+**环境兼容例外：**默认后端自己读取 .env；仅文件未定义 Key 时，需要转发父进程环境可在同一个 stdio 表内追加下面字段。不要另建重复实例，不将空 .env 当作缺失：
 
 ```toml
 env_vars = [
@@ -316,42 +305,47 @@ env_vars = [
 ]
 ```
 
-临时输入父进程业务变量的 PowerShell 命令如下；不要用它试图覆盖空值/损坏的 `.env`，也不要擅自删除已有用户级值：
-
 ```powershell
-$ApiKey = Read-Host '输入后端 API Key（环境兼容模式）' -MaskInput
-if ([string]::IsNullOrWhiteSpace($ApiKey)) { throw 'API Key 不能为空。' }
+$ApiKey = Read-Host '后端 API Key（仅环境兼容模式）' -MaskInput
+if ([string]::IsNullOrWhiteSpace($ApiKey)) { throw '密钥不能为空。' }
 $env:ZHENZHEN_GPTIMAGEGEN_API_KEY = $ApiKey
 Remove-Variable ApiKey
-# 可选非秘密设置；不需要时省略：
-$env:ZHENZHEN_GPTIMAGEGEN_OUTPUT_DIR = 'C:\MCP\zhenzhen-images'
-$env:ZHENZHEN_GPTIMAGEGEN_TIMEOUT = '180'
 codex
 ```
 
-2026-10-15 隔离测试中，原生 Codex `0.162.0-alpha.17.2` 把 `env:VAR` 作为字面值传入子进程，`env_vars` 才成功转发假值。因此不要用 `[mcp_servers.*.env]` 中的 `"env:VAR"` 或 `${VAR}` 当作原生 Codex 通用变量语法。字段依据见 [Codex 配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；不同 Host 的引用语法不能互相套用。
+仅在明确需要持久用户环境的兼容模式下执行下面命令；它写入当前用户的一个业务变量并同时设置当前父进程，其他设置不变。默认 .env 安装不需要它；不要用它覆盖文件中的空值或错误。保存后从同一 shell 启动 CLI；GUI 要完全退出后重新启动并核对实际继承环境，不保证已运行进程自动刷新。
 
-### Claude Code / Claude-3p：先打开配置，再合并
+```powershell
+$ApiKey = Read-Host '后端 API Key（将保存到当前用户环境）' -MaskInput
+if ([string]::IsNullOrWhiteSpace($ApiKey)) { throw '密钥不能为空。' }
+[Environment]::SetEnvironmentVariable('ZHENZHEN_GPTIMAGEGEN_API_KEY', $ApiKey, 'User')
+$env:ZHENZHEN_GPTIMAGEGEN_API_KEY = $ApiKey
+Remove-Variable ApiKey
+```
 
-先核对两个配置位置，同时备份并打开已经存在的文件。缺失时先初始化对应客户端，不创建空文件覆盖它的初始化流程。只使用一种客户端时可删去另一项：
+2026-10-15 隔离 Codex 0.162.0-alpha.17.2 验证 env:VAR 原样传入而 env_vars 可转发；原生 env 表的空字符串、`${VAR}` 也不应当作通用继承语法。不自动删除或清空已有环境变量。
+
+### Claude Code / Claude-3p：先打开配置
+
+以下先同时检查、备份并打开两个客户端已有配置；只使用一种时删去另一项，缺失则先按客户端初始化，不创建空文件覆盖配置：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ClaudeConfigs = @(
+$ConfigFiles = @(
   (Join-Path $env:USERPROFILE '.claude.json')
   (Join-Path $env:LOCALAPPDATA 'Claude-3p\claude_desktop_config.json')
 )
-foreach ($ConfigFile in $ClaudeConfigs) {
-  if (!(Test-Path -LiteralPath $ConfigFile -PathType Leaf)) {
-    Write-Warning "配置不存在，请先初始化对应客户端并核对目录：$ConfigFile"
-    continue
+foreach ($ConfigFile in $ConfigFiles) {
+  if (Test-Path -LiteralPath $ConfigFile -PathType Leaf) {
+    [IO.File]::Copy($ConfigFile, "$ConfigFile.$([guid]::NewGuid().ToString('N')).bak", $false)
+    Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $ConfigFile) -ErrorAction Stop
+  } else {
+    Write-Warning "配置不存在，请先初始化对应客户端：$ConfigFile"
   }
-  Copy-Item -LiteralPath $ConfigFile -Destination "$ConfigFile.$([Guid]::NewGuid().ToString('N')).bak" -ErrorAction Stop
-  notepad.exe $ConfigFile
 }
 ```
 
-Claude Code 用户作用域 `.claude.json` 中合并下面完整配置对象的 `mcpServers` 项，保留其他键；使用项目作用域时通过 Claude Code 对应流程管理 `.mcp.json`，不要混淆作用域：
+Claude Code 用户作用域 `.claude.json`：只合并 mcpServers 中该服务项，保留认证与其他设置。项目作用域由 Claude Code 的项目 .mcp.json 管理，不混为同一文件。
 
 ```json
 {
@@ -373,37 +367,51 @@ Claude Code 用户作用域 `.claude.json` 中合并下面完整配置对象的 
 }
 ```
 
-保存后重启 Claude Code，运行 `claude mcp list` 或会话 `/mcp` 检查服务，按客户端要求批准 MCP 工具权限，在目标会话调用 `get_model_guide`。CLI 用户作用域注册见后面的三种 Shell。
+保存后重启 Claude Code，用 `claude mcp list` 或会话 `/mcp` 检查服务，按客户端批准工具权限，在目标会话调用 get_model_guide。user 作用域 CLI 注册见下文。
 
-**Claude-3p：待核实。**已提供规范要求的配置路径和快捷打开步骤，但本项目没有该客户端当前版本的 schema 与连接证据，不能保证它接受 Claude Code 的 `type` 字段或代理语法。此项暂不列为已支持配置，不复制真实用户配置、不虚构另一份 JSON；接入前先核对该客户端文档，再补充验证。
+Claude-3p 已提供路径和快捷操作，但缺少该客户端当前 schema 与连接证据；暂不列为已验证接入，不把 Claude Code JSON 原封套用到它，也不虚构专属代理语法。核对该客户端版本与文档后再配置。
 
-### DSH：desktop / web 两个 profile
+### DSH：原生 web、App desktop、Multica multica
 
-按新指南，App 使用 `desktop`，原生 DSH 使用 `web`；默认路径分别为：
+三种 profile 同等适用，但文件相互独立；默认根目录为当前用户 `.dsh`。实际客户端指定 DSH_HOME 或自定义目录时按它的设置调整，不固定用户名、不要求管理员身份：
 
-- `%USERPROFILE%\.dsh\profiles\desktop\cordis.patch.yml`
-- `%USERPROFILE%\.dsh\profiles\web\cordis.patch.yml`
+| 客户端 | profile | 默认补丁路径 |
+|---|---|---|
+| 原生 DSH（npm/CLI） | web | `%USERPROFILE%\.dsh\profiles\web\cordis.patch.yml` |
+| DSH App | desktop | `%USERPROFILE%\.dsh\profiles\desktop\cordis.patch.yml` |
+| Multica | multica | `%USERPROFILE%\.dsh\profiles\multica\cordis.patch.yml` |
 
-设置 `DSH_HOME` 时以该目录为根。历史 Multica 若仍使用自定义 `multica` profile，其补丁在 `%USERPROFILE%\.dsh\profiles\multica\cordis.patch.yml`；请按实际启动 profile 修改路径，不自动迁移、重命名或同时加载。两种默认 profile 的备份与打开命令如下，仅使用一个时删去另一项：
+**在 YAML 前先备份并打开。**以下默认三份都处理；仅安装部分客户端时先删去不适用的 Profiles 项。先确认所有文件存在，再全部备份，最后打开；缺失时停止并初始化对应客户端，不自动创建 patch。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$DshDir = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
-$ProfileFiles = @(
-  (Join-Path $DshDir 'profiles\desktop\cordis.patch.yml')
-  (Join-Path $DshDir 'profiles\web\cordis.patch.yml')
-)
-foreach ($ProfileFile in $ProfileFiles) {
-  if (!(Test-Path -LiteralPath $ProfileFile -PathType Leaf)) { throw "找不到 profile 补丁，请核对 DSH_HOME 和实际 profile：$ProfileFile" }
+$DshRoot = if ([string]::IsNullOrWhiteSpace($env:DSH_HOME)) {
+  Join-Path $env:USERPROFILE '.dsh'
+} else {
+  $env:DSH_HOME
 }
-foreach ($ProfileFile in $ProfileFiles) {
-  $BackupFile = "$ProfileFile.$([Guid]::NewGuid().ToString('N')).bak"
-  Copy-Item -LiteralPath $ProfileFile -Destination $BackupFile -ErrorAction Stop
-  notepad.exe $ProfileFile
+$Profiles = @('web', 'desktop', 'multica')
+$PatchFiles = @($Profiles | ForEach-Object {
+  Join-Path $DshRoot "profiles\$_\cordis.patch.yml"
+})
+foreach ($PatchFile in $PatchFiles) {
+  if (!(Test-Path -LiteralPath $PatchFile -PathType Leaf)) {
+    throw "配置不存在，请先初始化对应客户端或核对 DSH_HOME：$PatchFile"
+  }
+}
+foreach ($PatchFile in $PatchFiles) {
+  $BackupPath = '{0}.{1}.bak' -f $PatchFile, ([guid]::NewGuid().ToString('N'))
+  [IO.File]::Copy($PatchFile, $BackupPath, $false)
+  Write-Host "备份：$BackupPath"
+}
+foreach ($PatchFile in $PatchFiles) {
+  Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $PatchFile) -ErrorAction Stop
 }
 ```
 
-本地 stdio profile 的完整补丁实例：
+下面每种传输只给一份完整补丁，分别合并到三份适用 profile；直连和代理二选一，不为同一 Agent 重复加载。以下字段根据桥接包 0.2.1-rc.2 源码核对，App/Multica 内置插件版本若不同，先核对其 schema，不把本机 npm 版本当作另外两者已验证。
+
+**本地 stdio 的完整 cordis.patch.yml 补丁列表：**
 
 ```yaml
 - insert:
@@ -425,7 +433,7 @@ foreach ($ProfileFile in $ProfileFiles) {
         failOnStartupError: true
 ```
 
-消费代理 Host 的完整补丁实例：
+**消费代理 Host 的完整 cordis.patch.yml 补丁列表：**
 
 ```yaml
 - insert:
@@ -441,17 +449,17 @@ foreach ($ProfileFile in $ProfileFiles) {
         failOnStartupError: true
 ```
 
-`id` 是唯一插件实例标识；`name` 是桥接包标识；`serverName` 是 Agent 可见命名空间，按已核对 schema 使用 `[A-Za-z0-9_-]{1,32}`。DSH 代理别名为 29 字符；通用代理全名超过 32 字符，不能直接照搬。DSH 使用 `streamable-http`，通用 JSON 使用 `streamableHTTP`；它们不是可交换字段值。`!!js` 由 DSH 解释，普通 YAML 不会执行，也不能用字符串 `${VAR}` 替代它。
+合并与激活步骤（两种传输、三个客户端均需完成）：
 
-两类 profile 的操作步骤同等适用：
+1. patch 仅为顶层空列表 `[]` 时，以适用的完整 YAML 列表替换；已有 patch 时追加为同一顶层列表条目，或合并到已有 insert 列表。不要在 `[]` 后直接拼接，不另包一层列表；保留原插件、注释、缩进和 `!!js`。
+2. 同一目标实例已存在时就地合并，不能重复追加。id 是不冲突的实例 ID，name 是包名，serverName 是命名空间，需匹配 `[A-Za-z0-9_-]{1,32}`。DSH 用 29 字符代理别名，不照搬超过上限的通用代理全名。不要编辑共享 bundle。
+3. stdio 先完成后端安装和 .env；HTTP 先完成网关与真实路由 ID 替换，并按前文掩码输入设置启动客户端父进程的网关令牌。DSH 的 `streamable-http` 不等于通用 JSON 的 `streamableHTTP`。`!!js` 由 DSH 解释，普通 YAML 不执行或自动插值；本地静态验证不求值真实凭据。
+4. 保存每份实际使用的 profile。原生 DSH 从设置好环境的 shell 执行 `dsh --profile web`；App 完全退出后重启并确认加载 desktop；Multica 在其实际管理入口激活 multica 或重启关联 DSH。后两者界面/运行时未在本轮联调，不能用启动 npm web 的结果替代。
+5. 检查插件加载日志，发现 11 个工具且无 create_response。在目标 Agent 预设中启用/允许工具，调用免费 get_model_guide；以实际发现的命名空间为准。Tools 可用不证明 Prompt/Resource 已桥接，600000 毫秒是 Host 等待设置，不取消云端任务。
 
-1. 备份并打开实际使用的 profile。内容是 `[]` 时整体替换为所选补丁；已有 patch 列表时合并一个 `insert` 项或向既有 insert 列表加入唯一实例，保留其他插件，不在 `[]` 后直接追加 YAML。不编辑共享 bundle。
-2. stdio 模式先在后端完成安装与 `.env` 配置；代理模式先确认 Cherry Studio 后端和网关可用，替换 URL 真实 ID，并向将启动 DSH 的父进程设置原始网关令牌。HTTP 配置不含后端 `command/args/env`。
-3. 保存后重新激活该 App profile 或退出重启对应 DSH。CLI 使用 `dsh --profile desktop` / `dsh --profile web`；旧自定义 profile 以实际值为准。额外 `--patch` 只对那次启动有效，不能与 profile 重复装入同一实例。
-4. 检查插件日志和可用工具，应发现 11 个工具且没有 `create_response`。本地命名空间例 `mcp__zhenzhen-gptimagegen2-5-mcp__get_model_guide`，代理例 `mcp__zhenzhen-gptimagegen2-5-proxy__get_model_guide`，以实际发现名称为准。
-5. 在目标 Agent 预设中允许这些工具，调用免费指南确认链路，再按授权执行业务。DSH Tools 可用不代表 Prompt/Resource 被桥接；超时 600000 毫秒也不改变云端任务状态。
+profile 备份含私有配置，只留本机并限制访问，不提交/打包。本手册不提供会重写现有 YAML 的自动拼接命令。额外 `--patch` 仅叠加到一次启动，不能与持久 profile 重复加载同一实例。
 
-若确需 DSH 的后端环境兼容模式，在 stdio 的 `config` 内增加下列片段，父进程按前面的掩码命令输入业务变量后从该 shell 启动 DSH。默认 `.env` 路径不需要此段；它同样不能覆盖损坏文件；有效进程值优先于用户级值：
+仅采用后端环境兼容模式时，在 stdio config 内加入以下字段；父进程业务变量输入方式同 Codex。默认 .env 流程不需要该段，HTTP 代理不能加入后端业务 env：
 
 ```yaml
 env:
@@ -460,9 +468,9 @@ env:
 
 ### CLI 添加：PowerShell 7、Bash、Zsh
 
-以下使用前述历史核对版本的参数，CLI 升级后先查 `--help`。Codex 用消费代理、Claude Code 用 user 作用域 stdio、DSH 加载已保存的 profile，覆盖三个适用 CLI × 三种 Shell。只注册不会证明连接成功；检查服务列表、允许工具并调用 `get_model_guide` 才完成免费链路检查。本轮未实际运行九种组合，也未修改用户 Host 配置。
+2026-10-21 只读核对本机 Codex 0.153.0、Claude Code 2.1.303、DSH 0.2.1-rc.2 的帮助；CLI 升级后先重新查 `--help`。Codex 用消费代理、Claude Code 用 user 作用域 stdio、DSH 加载已保存的 profile，覆盖三个适用 CLI × 三种 Shell。只注册不会证明连接成功；检查服务列表、允许工具并调用 `get_model_guide` 才完成免费链路检查。本轮未实际运行九种组合，也未修改用户 Host 配置。
 
-先按各 Host 小节备份配置，示例拒绝重复注册同名服务。PowerShell 使用 Windows 绝对路径；Bash/Zsh 中 `C:/MCP/...` 仅适用于能访问该路径的 Windows shell，Linux/macOS 应改为那台机器已初始化的绝对项目目录。Bash 使用 `read -p`，Zsh 使用 `read '变量?提示'`；秘密只通过当前进程环境转发。CLI 是可选 Host 入口，不是后端运行依赖。
+先按各 Host 小节备份配置，示例拒绝重复注册同名服务。PowerShell 使用 Windows 绝对路径；Bash/Zsh 示例指能直接启动 Windows uv/Python 且可访问 `D:/MCP/...` 的兼容环境；本项目不据此承诺 WSL/Linux/macOS 支持。Bash 使用 `read -p`，Zsh 使用 `read '变量?提示'`；秘密只通过当前进程环境转发。CLI 是可选 Host 入口，不是后端运行依赖。
 
 #### Codex CLI × PowerShell 7
 
@@ -473,7 +481,7 @@ $ErrorActionPreference = 'Stop'
 Get-Command codex -ErrorAction Stop | Out-Null
 $ProxyUrl = Read-Host '输入实际 MCP Proxy 完整 URL（包含服务器 ID）'
 if ([string]::IsNullOrWhiteSpace($ProxyUrl)) { throw 'URL 不能为空。' }
-$GatewayKey = Read-Host '完整 cs-sk- 网关密钥' -MaskInput
+$GatewayKey = Read-Host '完整原始网关令牌（不含 Bearer）' -MaskInput
 if ([string]::IsNullOrWhiteSpace($GatewayKey)) { throw '网关密钥不能为空。' }
 $env:CHERRYSTUDIO_API_GATEWAY_API_KEY = $GatewayKey
 Remove-Variable GatewayKey
@@ -492,7 +500,7 @@ codex
 ```bash
 command -v codex >/dev/null || exit 1
 read -r -p 'MCP Proxy 完整 URL: ' ProxyUrl
-read -r -s -p '完整 cs-sk- 网关密钥: ' GatewayKey
+read -r -s -p '完整原始网关令牌（不含 Bearer）: ' GatewayKey
 printf '\n'
 [[ -n "$ProxyUrl" && -n "$GatewayKey" ]] || exit 1
 export CHERRYSTUDIO_API_GATEWAY_API_KEY="$GatewayKey"
@@ -511,7 +519,7 @@ codex
 ```zsh
 command -v codex >/dev/null || exit 1
 read -r 'ProxyUrl?MCP Proxy 完整 URL: '
-read -r -s 'GatewayKey?完整 cs-sk- 网关密钥: '
+read -r -s 'GatewayKey?完整原始网关令牌（不含 Bearer）: '
 printf '\n'
 [[ -n "$ProxyUrl" && -n "$GatewayKey" ]] || exit 1
 export CHERRYSTUDIO_API_GATEWAY_API_KEY="$GatewayKey"
@@ -573,7 +581,7 @@ claude
 
 #### DSH CLI × PowerShell 7
 
-先保存所选 profile 的 stdio 或代理补丁；App 的 Profile 改为 `desktop`，示例使用原生 `web`。
+先将 stdio 或代理补丁保存到原生 DSH 的 web profile。以下启动 npm/CLI 版 web；App 使用自己的 desktop 运行时，Multica 使用它实际激活的 multica profile，不用本命令代替另外两个客户端的启动。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -643,59 +651,75 @@ DSH 没有经核对的 `dsh mcp add` 子命令。独立补丁只对本次运行�
 
 ## 5. 启动排障
 
-日常启动与配置模板一致，复用已安装环境：
+### 日常启动与日志
 
 ```powershell
 uv --directory 'D:\MCP\zhenzhen-gptimagegen2.5-mcp' run --no-sync python -m zhenzhen_image_mcp
+if ($LASTEXITCODE -ne 0) { throw '服务退出失败，请检查 stderr。' }
 ```
 
-stdio 等待 Host 输入时没有欢迎输出属正常；手工启动后用 Ctrl+C 结束，实际可用性用第 3 节脚本判断。stdout 只写 MCP 协议，日志/异常走 stderr，不向 stdout 插入调试文本。图像输出目录以工具返回的绝对路径为准。
+stdio 等待协议输入时没有欢迎输出正常；手工启动可 Ctrl+C 退出，但不能以能启动代替第 3 节协议检查。stdout 仅协议，日志写 stderr。缺少模块返回第 2 节解决安装问题，不在启动参数中偷偷安装/升级。
 
-默认安装盘符现为 `D:`，目录层级和项目目录名不变。已有其他位置的安装不会自动迁移；如需迁移，先停止服务、备份并保留 `.env`、整个 `.runtime` 及图片数据，在新目录重新安装锁定依赖（不要直接复用移动后的 `.venv`），再把 Host 指向新路径并验证连接。
+### 发布版本更新与回滚
 
-更新前先停用 MCP，确认所有使用该项目的子进程退出并备份当前版本与私有配置；保留 `.env` 及 ACL。使用过批量工具时，还须私有备份并保留整个 `.runtime` 检查点目录，不在数据库活动时复制，不通过删除它重置任务。新版本应来自实际仓库已通过 CI 的 Release，不在启动时自动拉代码。命令拒绝有源码修改的工作区，不执行 reset/clean、强制覆盖或自动 stash；旧版 ZIP 用户先按手册迁移到独立 clone，不覆盖原安装。
+更新前停止所有使用此安装的 MCP 子进程，记录当前 SHA，私下备份 `.env`（含 ACL）、整个 `.runtime`、输出目录的 `.tasks` 元数据与图片。不能在 SQLite 活动时复制；升级不覆盖 `.env`，新增字段手工合并，不能删除任务库重置防重。只有 ZIP 的旧安装先迁移到独立 clone，不直接覆盖旧目录或复用移动后的 .venv。
+
+以下固定更新目标为已发布 v0.3.1。将来选择新版本时，必须同时从其实际 Release 更新标签及完整 SHA，不能改为浮动 main。命令只允许干净 Git 安装，拒绝覆盖已忽略文件，不自动 stash/reset/clean：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$TargetTag = 'v0.3.1'
+$ExpectedSha = 'f5011efcb0a9bd4353c106811d71645e02ff74fe'
+$RepositoryUrl = 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git'
+$ActualOrigin = git -C $ProjectDir remote get-url origin
+if ($LASTEXITCODE -ne 0 -or $ActualOrigin -ne $RepositoryUrl) { throw 'origin 不符，请核对实际仓库后停止。' }
+$Changes = @(git -C $ProjectDir status --porcelain)
+if ($LASTEXITCODE -ne 0 -or $Changes.Count) { throw '存在本地修改，请先保留并处理。' }
+$PreviousCommit = git -C $ProjectDir rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw '无法记录旧提交。' }
+Write-Host "回滚提交：$PreviousCommit"
+git -C $ProjectDir fetch origin tag $TargetTag
+if ($LASTEXITCODE -ne 0) { throw '目标版本获取失败。' }
+$TargetCommit = git -C $ProjectDir rev-parse "refs/tags/$TargetTag^{commit}"
+if ($LASTEXITCODE -ne 0 -or $TargetCommit -ne $ExpectedSha) { throw '标签 SHA 与发布记录不符。' }
+git -C $ProjectDir switch --detach --no-overwrite-ignore $TargetCommit
+if ($LASTEXITCODE -ne 0) { throw '版本切换失败，保留文件并停止。' }
 Set-Location -LiteralPath $ProjectDir
-$Changes = @(git status --porcelain)
-if ($LASTEXITCODE -ne 0 -or $Changes.Count) { throw '不是干净的 Git 安装，请先检查并保留本地修改。' }
-$OldSha = git rev-parse HEAD
-if ($LASTEXITCODE -ne 0) { throw '无法记录原版本。' }
-Write-Host "回滚提交：$OldSha"
-$ReleaseTag = Read-Host '输入已通过 CI 的目标发布标签'
-$ExpectedSha = Read-Host '输入该版本发布记录中的完整提交 SHA'
-if ($ReleaseTag -notmatch '^v\d+\.\d+\.\d+$' -or $ExpectedSha -notmatch '^[a-fA-F0-9]{40}$') { throw '版本或 SHA 格式不正确。' }
-git fetch origin --tags
-if ($LASTEXITCODE -ne 0) { throw '获取标签失败。' }
-$TargetSha = git rev-parse "$ReleaseTag^{commit}"
-if ($LASTEXITCODE -ne 0 -or $TargetSha -ne $ExpectedSha) { throw '标签提交与发布记录不符。' }
-git switch --detach $TargetSha
-if ($LASTEXITCODE -ne 0) { throw '切换版本失败，保留错误信息。' }
 uv sync --locked --no-dev
-if ($LASTEXITCODE -ne 0) { throw '更新依赖失败，停止启动。' }
-pwsh -NoProfile -File '.\scripts\smoke-test.ps1'
-if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启用服务。' }
+if ($LASTEXITCODE -ne 0) { throw '更新安装失败，停止启动。' }
+pwsh -NoProfile -File '.\scripts\smoke-test.ps1' -TimeoutSeconds 30
+if ($LASTEXITCODE -ne 0) { throw '更新后协议检查失败，停止启用服务。' }
 ```
 
-固定发布版本处于 detached HEAD 属正常。通过后重新启用 Host、刷新工具缓存。回滚时停止服务，输入之前记录的完整旧 SHA，执行 `git switch --detach 旧SHA`，再 `uv sync --locked --no-dev` 和协议检查；保留原 `.env`、ACL、图片及任务元数据，不覆盖私有文件。新增必需字段只手工合并。修改 `.env` 也须重启实际 MCP 子进程，默认不承诺热加载。
+成功后重启 Host 的实际 MCP 子进程，刷新工具发现并免费调用指南。origin 使用自己已验证的 SSH 地址时，先人工核对其仓库归属，再相应调整检查值；不要因 URL 拼写差异忽略校验。
 
-若 uv 输出 `Built zhenzhen-image @ file:///.../Temp/zhenzhen-member-verify-.../project`，这通常是打包器在临时目录执行安装验证；不能仅凭该行断言日常安装目录错误。正常成员 `uv --directory ...` 应定位成员项目。打包临时目录按脚本上下文清理，uv 共享缓存可能保留包；不要因此删除整个用户 Temp 或开发 `.venv`。缓存访问被拒绝时先查当前运行账号、目录权限和 `UV_CACHE_DIR`，需要时选该账号可写的专用缓存，不默认管理员启动。
+回滚也先停止进程，使用此前记录的完整旧 SHA，重新锁定安装和检查。版本切换不会自动回滚业务数据；回滚到没有批量能力的旧版时，保留新数据库，只凭已知 provider_task_id 查询，不用旧工具重复提交：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$PreviousCommit = Read-Host '输入此前记录、已验证的完整旧提交 SHA'
+if ($PreviousCommit -notmatch '^[a-fA-F0-9]{40}$') { throw '需要完整提交 SHA。' }
+if (@(git -C $ProjectDir status --porcelain).Count -or $LASTEXITCODE -ne 0) { throw '先保留并处理工作区修改。' }
+git -C $ProjectDir switch --detach --no-overwrite-ignore $PreviousCommit
+if ($LASTEXITCODE -ne 0) { throw '回滚切换失败。' }
+Set-Location -LiteralPath $ProjectDir
+uv sync --locked --no-dev
+if ($LASTEXITCODE -ne 0) { throw '回滚依赖安装失败，停止启动。' }
+pwsh -NoProfile -File '.\scripts\smoke-test.ps1' -TimeoutSeconds 30
+if ($LASTEXITCODE -ne 0) { throw '旧版协议检查失败，停止启动。' }
+```
+
+不同目录迁移应重新创建虚拟环境，复制/恢复用户文件时保留 ACL 和任务数据，再统一修改 Host 路径并复验。当前成员安装默认 D 盘，不自动迁移现有 C 盘目录；手册不授权删除旧安装或备份。
 
 ## 6. 文件清单与交付
 
-### GitHub 源码、运行入口与本地生成物
+默认从第 2 节实际 GitHub 发布标签安装。跟踪的 src、pyproject.toml、uv.lock、.python-version、LICENSE、模板、README/MANUAL、脚本、测试、契约与 CI 配置均可随 clone 取得。成员本机生成 .venv；.env、.runtime、.tasks、图片、私有 Host 配置和缓存不属于公开交付。没有 Node 构建入口或独立 HTTP 部署产物。
 
-实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，元数据版本为 0.3.1。发布流程核对标签与元数据一致、目标提交属于默认分支且通过该分支 push CI，再构建、验证并生成发布草稿。核对草稿中的标签、完整 SHA、默认分支 CI、安装证据及 SHA256SUMS 后公开；成员只安装已公开的发布版本。
+### 可选 ZIP（仅明确需要时）
 
-仓库维护 `src/`、元数据与锁、`.python-version`、空 `.env.example`、模板、README/MANUAL、`tests/`、`scripts/`、开发规范/契约以及 `.github/workflows/`。新模块分别负责分组契约（contracts）、供应商 JSON/SSE（provider）、任务响应与元数据（tasks）、工作流编排（api）。`.venv/`、`dist/`、缓存、测试报告和私有配置由安装/验证生成，不随源码跟踪。
-
-本地与 CI 的共用检查入口为 `uv run --no-sync python scripts/check.py --build --audit`；报告写入 `.runtime/reports/`。按 Windows 用户范围，PR 与 push CI 仅使用 `windows-latest`，保留全部格式/lint/类型、秘密、文档、测试、构建、依赖、独立安装和协议检查。受控 Release 同样在 Windows 运行，只从默认分支手动触发，核对既有版本标签、元数据、同提交成功的 push CI，并重新构建/安装验证后生成带 SHA256SUMS 和证据的 **draft Release**。发布前还需维护者配置真实 ruleset/必需评审和 release 环境审批，再审阅草稿并批准公开。CI 运行成功不等于远端合并/发布门禁已配置。
-
-### 可选 ZIP
-
-沿用显式白名单作可选交付，当前共 23 个运行/初始化文件；GitHub clone 不受这个运行子集限制：
+GitHub Release 默认提供源码/构建产物及校验资料，不保证包含成员 ZIP；只有维护者明确提供并验证时才使用下面的成员包流程。不能将 wheel/sdist 当成成员 ZIP，或绕过项目根 .venv 布局全局安装。
 
 <!-- MEMBER_FILES_START -->
 - `.env.example`
@@ -723,42 +747,37 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 - `src/zhenzhen_image_mcp/tasks.py`
 <!-- MEMBER_FILES_END -->
 
-开发者有明确 ZIP 需求时，从项目根运行：
+维护者在已准备开发依赖的项目根目录按需运行：
 
 ```powershell
 pwsh -NoProfile -File '.\scripts\package-user.ps1'
-if ($LASTEXITCODE -ne 0) { throw '打包或独立安装验证失败。' }
+if ($LASTEXITCODE -ne 0) { throw '打包/独立安装验证失败。' }
 ```
 
-只验证、不保留 ZIP：
+仅验证、不保留 ZIP 时使用 `pwsh -NoProfile -File '.\scripts\package-user.ps1' -VerifyOnly`。脚本先构建，检查白名单和秘密禁入，再独立临时目录、空缓存在线锁定安装与协议验证；不在日常启动中执行。输出 `output/zhenzhen-gptimagegen2.5-mcp-0.3.1-user.zip`，唯一顶层为 `zhenzhen-gptimagegen2.5-mcp/`，拒绝覆盖同名包。测试/开发规范不入成员 ZIP，但仍保留在 Git。
 
-```powershell
-pwsh -NoProfile -File '.\scripts\package-user.ps1' -VerifyOnly
-if ($LASTEXITCODE -ne 0) { throw '成员安装验证失败。' }
-```
-
-输出为 `output/zhenzhen-gptimagegen2.5-mcp-0.3.1-user.zip`，内部只有 `zhenzhen-gptimagegen2.5-mcp/` 顶层目录。脚本先构建 wheel/sdist，审计白名单及秘密禁入，再在独立临时目录和空缓存中解压、联网锁定安装、执行 stdio/IPv6 回归，成功后才保留包；已有同名包拒绝覆盖。本轮只验证临时归档，不额外交付 ZIP。0.1.x 的发行包名/平铺布局不再适用。
-
-收到该结构的 ZIP 后，直接解压到父目录，不预建项目目录：
+收到明确的已验包并核对维护者校验摘要后，按提示输入 ZIP 文件路径，解压到父目录，不预建项目目录：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ArchivePath = Read-Host '输入可选成员 ZIP 的完整文件路径（包含 .zip）'
+$ArchivePath = Read-Host '请输入成员 ZIP 完整文件路径（包含 .zip）'
 if (!(Test-Path -LiteralPath $ArchivePath -PathType Leaf)) { throw 'ZIP 文件不存在。' }
-$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
-if (Test-Path -LiteralPath $ProjectDir) { throw '安装目录已存在，请保留私有配置并按升级流程处理。' }
-Expand-Archive -LiteralPath $ArchivePath -DestinationPath 'D:\MCP' -ErrorAction Stop
-if (!(Test-Path -LiteralPath (Join-Path $ProjectDir 'pyproject.toml'))) { throw 'ZIP 结构错误。' }
+$InstallRoot = 'D:\MCP'
+$ProjectDir = Join-Path $InstallRoot 'zhenzhen-gptimagegen2.5-mcp'
+if (Test-Path -LiteralPath $ProjectDir) { throw '已有安装，请保留配置并使用更新流程。' }
+New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
+Expand-Archive -LiteralPath $ArchivePath -DestinationPath $InstallRoot -ErrorAction Stop
+if (!(Test-Path -LiteralPath (Join-Path $ProjectDir 'pyproject.toml') -PathType Leaf)) { throw '解压层级错误。' }
 Set-Location -LiteralPath $ProjectDir
 uv sync --locked --no-dev
-if ($LASTEXITCODE -ne 0) { throw '锁定安装失败，停止启动。' }
+if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 ```
 
-仅使用实际维护者已验证、提供校验值的包。真实 `.env`、秘密备份、私有 Host 配置、依赖、缓存、开发规范/测试不入 ZIP；升级时不清空安装目录，也不覆盖成员 `.env`。新文件布局与保存私有配置/ACL 的场景由打包测试覆盖。
+随后按第 2 节配置 .env、第 3 节检查协议；不覆盖旧目录或私有文件。ZIP 必须排除真实 .env、秘密备份、私有配置、任务数据库、依赖、缓存及开发资料。通用 clone 更新命令不适用于无 .git 的旧 ZIP 安装。
 
 ## 7. 资源清单
 
-当前发现 **8 Tools、1 Prompt、1 Resource、0 Resource templates**。以下工具参数来自发现快照；业务约束还在第 8、9 节说明。JSON 示例是工具 arguments，使用前替换明确标出的本地路径、结果 URL 和 task_id；它们不会自行执行。
+以下工具参数、默认值、枚举和调用示例来自当前发现快照 [docs/mcp-inventory.json](docs/mcp-inventory.json)，与源码契约对应。示例路径/结果 URL/任务编号需替换为实际输入，不是已发生的收费请求。JSON 为工具 arguments，不是 Host 配置。
 
 <!-- INVENTORY_START -->
 ### `get_model_guide`
@@ -1110,6 +1129,9 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 | `get_model_guide` | `models`、`advice`、`base_url`、`output_dir`、`key_variable`、`key_present`、`default_group`、`official_declaration`；不返回密钥。 |
 | `generate_image` / `edit_image` | `status=COMPLETED` 表示收到同步或 Images SSE 最终响应；`group` 为声明分组；`save_status`、`files[]`、`download_errors[]`、`response`（剔除图片 Base64）。检查 save_status 才能判断保存结果。 |
 | `submit_image_generation` / `submit_image_edit` | `task_id`、`status=SUBMITTED`、`group`、`output_dir`、`next_tool`，元数据保存失败时有 `warning`。 |
+| `submit_image_batch` | `checkpointer`、`thread_id`、`status=ACCEPTED/ATTENTION_REQUIRED`、`tasks[]`、`next_tool`、`note`；每项含逻辑 task_id、status、provider_task_id（可空）、group、output_dir、reused 及可选 error/warning。ACCEPTED 只表示提交确认，不是成图。 |
+| `get_image_batch` | `status=SNAPSHOT`、原 checkpointer/thread_id、tasks[] 最后观察状态；未知线程返回空数组，不查询上游；tasks[] 结构同上。 |
+| `get_batch_image_task` | 原三元组、任务状态、provider_task_id、group、output_dir、reused；取得上游结果时含 result，结构与单项查询一致，保存状态位于 result.save_status。无编号则只返回本地记录，不补发。 |
 | `get_image_task` | `task_id`、`status`、`progress`、`fail_reason`、`response`；FAILURE 返回 isError 和脱敏原因；可用时保留 usage/cost（单位未确认）；SUCCESS 且 save=true 时追加保存字段。 |
 | `wait_image_task` | 查询返回结构；本地等待超时时追加 `wait_timed_out=true`、`next_tool`、`note`，不取消云端任务。 |
 | `download_image` | `path`、`mime_type`、`bytes`、`sha256`、`reused`。 |
@@ -1128,7 +1150,7 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 
 图片输入接受 MCP 所在机器的绝对路径、公开 HTTP(S) URL 或 Base64 data URL。Generations 将参考图序列化为 JSON `image` 数组，Edits 多图通过重复 `image[]` multipart 字段上传。图片仅支持 PNG/JPEG/WebP，每张最多 50 MiB，1–16 张，总输入上限 100 MiB；公开 URL 下载逐跳校验。
 
-`size` 可选，省略即不发送；允许 `auto` 或自定义 `WIDTHxHEIGHT`，边长为 16 倍数，最大边长 3840，比例不超过 3:1，总像素 655360–8294400。例如 `2048x1152`、`3840x2160`、`2160x3840`。`quality` 可选 `auto/low/medium/high`。逆向不发送 `n`、`response_format` 或 mask；官转扩展按下节声明并遵守端点约束。不能将尺寸可填写推断为供应商一定有对应模型权限。
+`size` 可选，省略即不发送；允许 `auto` 或自定义 `WIDTHxHEIGHT`，边长为 16 倍数，最大边长 3840，比例不超过 3:1，总像素 655360–8294400。例如 `2048x1152`、`3840x2160`、`2160x3840`。逆向 `quality` 可选 `auto/low/medium/high`；官转另允许 `xhigh/max`。逆向不发送 `n`、`response_format` 或 mask；官转扩展按下节声明并遵守端点约束。不能将尺寸可填写推断为供应商一定有对应模型权限。
 
 ### 分组声明 format def
 
@@ -1137,7 +1159,7 @@ group: "reverse" | "official" = "reverse"
 official_options: OfficialOptions | null = null
 ```
 
-这两个字段是四个生成/编辑工具的顶层 arguments。省略 group 即为逆向；要使用官转，必须显式传 **`"group": "official"`**。`official_options` 是对象，不能写成 JSON 字符串，不能放在 prompt 内当作声明。即使只传空对象，未声明官转也会拒绝。不会从模型、提示词、API Key、环境变量或报错推断/切换分组。
+这两个字段是四个生成/编辑工具的顶层 arguments；批量入口则在每个 tasks[] 项内声明。省略 group 即为逆向；要使用官转，必须显式传 **`"group": "official"`**。`official_options` 是对象，不能写成 JSON 字符串，不能放在 prompt 内当作声明。即使只传空对象，未声明官转也会拒绝。不会从模型、提示词、API Key、环境变量或报错推断/切换分组。
 
 逆向示例（`generate_image`，省略 group）：
 
@@ -1180,7 +1202,7 @@ official_options: OfficialOptions | null = null
 | stream | 布尔；true 消费 Images SSE，收集最终图片后返回 MCP 结果，与异步提交互斥 |
 | partial_images | 整数 0–3，要求 stream=true；中间预览不落盘、不算最终成功 |
 
-顶层 quality 在逆向仅 auto/low/medium/high，官转另允许 xhigh/max。字段与范围来自 [OpenAI Images 参考](https://developers.openai.com/api/reference/resources/images/methods/edit)、锁定 SDK 和供应商说明；官方能力不等于供应商已实测支持。未知字段/不合法组合在本地失败，供应商拒绝也不自动换组或重提。用户已确认 Generations 没有 mask 格式示例，因此仅 edits 工具支持 multipart mask；JSON generations 不猜测二进制格式。SSE 属于 Images，不恢复 Responses。
+顶层 quality 在逆向仅 auto/low/medium/high，官转另允许 xhigh/max。本项目接受的字段与范围以 contracts.py、锁定 SDK 和供应商说明为准；官方能力不等于供应商已实测支持。未知字段/不合法组合在本地失败，供应商拒绝也不自动换组或重提。用户已确认 Generations 没有 mask 格式示例，因此仅 edits 工具支持 multipart mask；JSON generations 不猜测二进制格式。SSE 属于 Images，不恢复 Responses。
 
 分组声明不会改变供应商后台 Key 权限。异步查询/下载无须重传 group；新任务元数据保存分组和输出目录，旧 metadata 仅含目录的格式仍可读取。
 
@@ -1309,6 +1331,8 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 
 部分下载失败保留其他成功文件。URL 仍有效时用 `download_image`；异步结果可用原 task_id 再查。同步 Base64 结果若保存失败且无 URL，本版不持久化原始响应，不能保证恢复；先修复目录，禁止为恢复而自动重新付费。
 
+尺寸验收边界：已有 Flare 真实测试请求 1024×1024，供应商曾返回 1254×1254。工具保留供应商原图，不自动裁切或重新收费；有严格尺寸要求时，保存后检查实际像素。详细结果见 [D 盘验收记录](docs/D-DRIVE-ACCEPTANCE.md)。
+
 ## 9. 注意事项
 
 | 边界 | 实际行为与操作要求 |
@@ -1335,7 +1359,7 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | `uv/pwsh/python` 找不到 | 检查 PATH 和实际运行账号；安装符合第 1 节版本的工具，重启 Host 使其继承 PATH。Python 3.12 下载需要网络 |
 | `uv sync --locked` 失败 | 检查 Python、源、网络/代理、证书和缓存权限。锁与元数据不一致由开发者修复，不删除锁或加 `--upgrade` |
 | `No module named zhenzhen_image_mcp` | 核对安装目录、`src/`、元数据、初始化退出码和 `--directory`；成员不复用开发机 `.venv` |
-| 解压后多套一层目录 | 默认 clone 自动生成项目目录；可选 0.3.1 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
+| 解压后多套一层目录 | 默认 clone 自动生成项目目录；0.3.1 可选 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
 | 握手过了但绘图报缺少 Key | 协议检查不认证供应商；检查实际项目 `.env` 字段、运行账号和 ACL，调用指南看 `key_present` |
 | `.env` 空值 / 格式 / 重复 / 编码错误 | 填实际 Key、保留唯一字段、保存 UTF-8；错误必须修复，不能靠环境旧值掩盖 |
 | `.env` 不可读 | 按实际服务账号核对文件与目录 ACL；不要提升整个 Host 为管理员或给 Everyone 读取 |
@@ -1349,7 +1373,7 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | `NOT_START` 或等待超时 | 正常排队状态；用原 task_id 继续查，不重新提交。wait 超时不取消任务 |
 | 查询暂时失败 | 只读查询有有限重试；耗尽后保留 task_id 续查，401 等永久错误先修复认证。不要重复生成 |
 | SUCCESS / COMPLETED 却无文件 | 检查 `save_status/files/download_errors` 和目录写权限；公开下载域名可能受限，按第 8 节补下载 |
-| Host 协议/SDK 不兼容 | SDK 版本与协议版本分开核对；本轮证明的是 stdio legacy 2025-11-25 路径，Tools-only 桥接不适用完整能力检查 |
+| Host 协议/SDK 不兼容 | SDK 版本与协议版本分开核对；已有证据验证 stdio legacy 2025-11-25 路径，Tools-only 桥接不适用完整能力检查 |
 | stdio 没反应 / 协议解析失败 | 无输出可正常；用检查脚本判定。stdout 只保留协议，调试日志改 stderr，核对实际模块入口 |
 | 是否支持 Responses / 流式模型响应 | 当前不提供，已按用户要求移除；用 Images 编辑与异步工具，不能凭供应商通用文档恢复已删除能力 |
 | GitHub CI/发布是否已生效 | PR #1 已合入 main 并通过合入提交的 Windows CI；各版本的发布运行及证据见实际 Release。发布前已配置 main 的 PR/CI 检查、v* 标签不可修改/删除及 release 环境维护者审批（仅 main）；单维护者无需独立 approving review，不能视为独立同行评审。当前设置以 GitHub 为准 |

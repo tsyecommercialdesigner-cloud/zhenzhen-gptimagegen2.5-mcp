@@ -256,7 +256,7 @@ HTTP Host 只连接 URL，不设置后端 `command`、`args`、`cwd` 或进程 `
 | HTTP/代理 Host JSON | 直接连接 HTTP 服务时提供目标 Host 支持的完整 URL/认证模板；采用代理时提供 `.cherrystudiomcpproxy.mcp.json.example` 或实际代理对应模板，以及真实路由 ID 的替换方式和认证。 |
 | Codex TOML | 若支持 Codex，提供对应作用域的服务表、配置路径、选择的传输方式和其支持的秘密引用方式。 |
 | Claude Code / Claude-3p JSON | 在 JSON 配置示例前先给出同时打开两者配置文件的 PowerShell 命令；按实际支持的客户端分别提供对应作用域、schema、stdio 或 HTTP 配置及认证，保留无关配置。 |
-| DSH profile YAML | 若支持 DSH，提供插件版本核对后的完整补丁、所选传输，以及 App（`desktop`）与原生 DSH（`web`）两个适用 profile 的路径。 |
+| DSH profile YAML | 若支持 DSH，提供插件版本核对后的完整补丁、所选传输，以及原生 DSH（`web`）、App（`desktop`）和 Multica（`multica`）三种 profile 的路径与备份、打开及合并命令。 |
 | CLI 添加流程 | 为每个适用 CLI 提供 PowerShell 7、Bash、Zsh 的前置条件、注册/加载、作用域和验证步骤。三个 CLI 全部适用时覆盖九种组合。 |
 
 本地 stdio 模板的 Python `command` 为 `uv`，Node.js 为 `node`；不使用 `cwd`。Python 通过 `--directory` 定位，Node.js 通过入口绝对路径定位；资源路径相对实际安装模块，不依赖 Host 的工作目录。
@@ -360,16 +360,47 @@ foreach ($ConfigFile in $ConfigFiles) {
 
 随后分别标明每个 JSON 示例对应的客户端与配置作用域，按其实际版本核对 schema；不能因为都使用 JSON 就直接互换整个配置文件。编辑前备份待修改文件，仅合并目标 MCP 服务项，保留已有服务、认证和无关设置；配置文件中的私有内容不复制到共享手册。
 
-### DSH：App 与原生 DSH
+### DSH：原生 DSH、App 与 Multica
 
-DSH 同时面向 App 与原生 DSH 时，若配置相同，每种实际支持的传输只给一个共用 YAML 示例，明确独立 profile 路径：
+DSH 同时面向原生 DSH、App 与 Multica。若配置相同，每种实际支持的传输只给一个共用 YAML 示例，分别合并到三份独立 profile；存在差异时标明各 profile 的适用补丁：
 
 - App（profile 为 `desktop`）：`C:\Users\<windows_user>\.dsh\profiles\desktop\cordis.patch.yml`。
 - 原生 DSH（profile 为 `web`）：`C:\Users\<windows_user>\.dsh\profiles\web\cordis.patch.yml`。
+- Multica（profile 为 `multica`）：`C:\Users\<windows_user>\.dsh\profiles\multica\cordis.patch.yml`。
 
 说明替换真实用户目录或 `DSH_HOME`；不固定为某个人的用户名，也不暗示需要管理员身份。保留已有插件与无关补丁，只编辑目标 patch，不编辑共享 bundle。示例中如使用插件支持的 `!!js`，只做安全语法/结构验证，不求值真实环境凭据；普通 YAML 不自动执行 JavaScript 或展开环境变量。
 
-DSH 指南需包含可运行的备份/打开步骤、空 `[]` 与已有 patch 的合并方式、唯一实例 ID、保存/激活或重启、工具发现及权限预设检查。不根据 Tools 可用就宣称 Prompts/Resources 也被桥接。若提供批量打开两个 profile 的命令，先检查文件存在，创建唯一相邻备份；仅使用一个 profile 的用户可删去另一项。文档编辑不授权运行这些修改用户配置的步骤。
+具体手册在 YAML 示例前给出以下 PowerShell 7 备份/打开命令。默认同时处理三种 profile；仅使用部分客户端时删去不适用项。优先使用当前终端明确设置的 `DSH_HOME`，否则使用当前用户的 `.dsh`；客户端另有自定义目录时先按实际设置调整 `$DshRoot`。先确认全部目标文件存在，再创建唯一相邻备份；缺失时先按对应客户端流程初始化，不自动创建文件或覆盖已有配置：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$DshRoot = if ([string]::IsNullOrWhiteSpace($env:DSH_HOME)) {
+  Join-Path $env:USERPROFILE '.dsh'
+} else {
+  $env:DSH_HOME
+}
+$Profiles = @('web', 'desktop', 'multica')
+$PatchFiles = @($Profiles | ForEach-Object {
+  Join-Path $DshRoot "profiles\$_\cordis.patch.yml"
+})
+foreach ($PatchFile in $PatchFiles) {
+  if (!(Test-Path -LiteralPath $PatchFile -PathType Leaf)) {
+    throw "配置不存在，请先初始化对应客户端或核对 DSH_HOME：$PatchFile"
+  }
+}
+foreach ($PatchFile in $PatchFiles) {
+  $BackupPath = '{0}.{1}.bak' -f $PatchFile, ([guid]::NewGuid().ToString('N'))
+  [IO.File]::Copy($PatchFile, $BackupPath, $false)
+  Write-Host "备份：$BackupPath"
+}
+foreach ($PatchFile in $PatchFiles) {
+  Start-Process -FilePath 'notepad.exe' -ArgumentList ('"{0}"' -f $PatchFile) -ErrorAction Stop
+}
+```
+
+命令只备份并打开文件；随后在编辑器中逐份合并。目标文件仅为顶层空列表 `[]` 时，用该 profile 适用的完整 YAML 补丁列表替换；已有 patch 时，将新增补丁作为同一顶层列表的条目追加，保留原有插件、配置和缩进，不另加一个顶层 `[]`，不把完整列表嵌套成列表项。同一目标 MCP 实例已存在时就地合并该项，不重复追加；保留无关实例，为新增实例使用不冲突的唯一 ID。不能通过字符串拼接或通用 YAML 重写命令破坏注释、`!!js` 标签及已有配置；消费项目若提供自动合并脚本，须按实际 schema 验证保留行为，并在手册给出真实脚本命令。
+
+保存后分别按三个客户端的实际版本说明激活 profile 或重启，检查补丁加载、工具发现与权限预设；不根据 Tools 可用就宣称 Prompts/Resources 也被桥接。备份含私有配置，仅留本机并保留访问限制，不提交或打包。文档编辑不授权运行这些修改用户配置的步骤。
 
 ### 三种 Shell 与验证口径
 
