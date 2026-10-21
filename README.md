@@ -2,7 +2,7 @@
 
 Python stdio MCP，面向 GPT Image 2.5 Flare / Sunburst，支持同步生成/编辑、Images 流式结果、批量异步并发、持久化防重、恢复查询和图片自动落盘。Sunburst 用于高精度编辑、Flare 用于追求速度的生成；选型建议来自供应商，质量和速度需实际验收。
 
-版本 **0.3.0**。源码已通过 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 合入 `main`；正式成员以实际 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases) 中的版本标签、完整 SHA 和验证证据为准，按 [MANUAL 第 2 节](MANUAL.md#2-项目初始化) clone、核对提交并 `uv sync --locked --no-dev`。元数据版本本身不证明该版本已公开发布。
+版本 **0.3.1**。源码已通过 [PR #1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/pull/1) 合入 `main`；正式成员以实际 [Releases](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases) 中的版本标签、完整 SHA 和验证证据为准，按 [MANUAL 第 2 节](MANUAL.md#2-项目初始化) clone、核对提交并 `uv sync --locked --no-dev`。元数据版本本身不证明该版本已公开发布。
 
 本项目面向 Windows 用户。PR / push CI 仅在 `windows-latest` 验收，手动发布工作流也使用 Windows；保留全部测试、构建、协议、安装与依赖检查。其他操作系统不在当前支持和 CI 验收范围内。
 

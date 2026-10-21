@@ -1,6 +1,6 @@
 # Zhenzhen Image MCP 使用手册
 
-适用版本：0.3.0；是否已公开发布，以实际 GitHub Release 记录为准。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
+适用版本：0.3.1；是否已公开发布，以实际 GitHub Release 记录为准。本文按当前源码、锁文件及协议发现结果说明实际行为；验证范围见第 3 节。正式版本发布后，首次使用按第 1–4 节操作，已有安装按第 5 节升级。
 
 ## 1. 环境准备
 
@@ -15,7 +15,7 @@
 | 开发目录 | `E:\collaborative-workspace\zhenzhen-gptimage2.5-mcp`；不因成员命名改动而迁移 |
 | 成员项目目录原名 | `zhenzhen-gptimagegen2.5-mcp`（用户约定） |
 | Windows 默认安装目录 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp` |
-| Python 发行包 / 版本 | `zhenzhen-image` / `0.3.0`，来自 `pyproject.toml` |
+| Python 发行包 / 版本 | `zhenzhen-image` / `0.3.1`，来自 `pyproject.toml` |
 | Python 模块 / 入口 | `zhenzhen_image_mcp` / `python -m zhenzhen_image_mcp` |
 | 本地配置服务标识 | `zhenzhen-gptimagegen2-5-mcp` |
 | 通用代理配置服务标识 | `zhenzhen-gptimagegen2-5-mcp-proxy` |
@@ -52,7 +52,7 @@
 
 默认把 API Key 放进后端项目 `.env`，由 MCP 自己读取；Host 的 JSON/TOML/YAML 默认不传后端密钥。源码/editable 按模块所属根目录定位；项目 `.venv` 中的 wheel 按固定虚拟环境父目录定位，并核对 pyproject.toml 存在。不搜索 Host 工作目录或祖先文件，不支持无项目根的全局 wheel 安装。
 
-| 来源 / 状态 | 当前 0.3.0 行为 |
+| 来源 / 状态 | 当前 0.3.1 行为 |
 |---|---|
 | 项目 `.env` 定义有效 Key | 使用文件值，覆盖环境中的值 |
 | 文件不存在 / 未定义字段 | 先读进程变量，仅其未定义时再兼容 Windows 当前用户级变量；非 Windows 读进程变量 |
@@ -75,7 +75,7 @@
 
 ### 从 GitHub 固定版本安装
 
-默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。以下命令仅用于 Releases 中已公开的版本；如尚无目标版本，请勿猜测标签。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不猜测 `v0.3.0` 已存在。
+默认从上述实际仓库取得发布版本，私有仓库使用成员自己的 Git 凭据管理/SSH 授权，不把令牌写入 URL。以下命令仅用于 Releases 中已公开的版本；如尚无目标版本，请勿猜测标签。维护者须在 Release 提供通过 CI 的版本标签、完整提交 SHA 和安装验证记录；从该 Release 的 `release-evidence.json` 取得值，不凭元数据推测发布标签。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -98,7 +98,7 @@ if ($LASTEXITCODE -ne 0) { throw '锁定依赖安装失败，请先解决安装�
 
 clone 自动创建项目目录，根目录直接包含 `src/`、`pyproject.toml`、`uv.lock`、版本文件、手册、模板及检查脚本。源码仓库同时有开发文档和测试是正常行为；运行依赖安装到成员自己的 `.venv`。Python 安装阶段由 hatchling 构建应用，不运行 `uv init`、不用裸 pip、不添加不存在的 SDK extra。日常启动不构建或安装。Linux/macOS 须使用该机器绝对路径；本轮未实测跨平台成员安装。
 
-仅当明确收到可选 ZIP 时，使用第 6 节流程；ZIP 不再是默认初始化的前提。已有旧版平铺包请按其版本手册操作，不与 0.3.0 的唯一顶层目录结构混用。
+仅当明确收到可选 ZIP 时，使用第 6 节流程；ZIP 不再是默认初始化的前提。已有旧版平铺包请按其版本手册操作，不与 0.3.1 的唯一顶层目录结构混用。
 
 ### 创建并填写私有 `.env`
 
@@ -687,7 +687,7 @@ if ($LASTEXITCODE -ne 0) { throw '升级后协议检查失败，先回滚再启�
 
 ### GitHub 源码、运行入口与本地生成物
 
-实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，元数据版本为 0.3.0。发布流程核对标签与元数据一致、目标提交属于默认分支且通过该分支 push CI，再构建、验证并生成发布草稿。核对草稿中的标签、完整 SHA、默认分支 CI、安装证据及 SHA256SUMS 后公开；成员只安装已公开的发布版本。
+实际仓库为 `https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp`，运行入口为 `python -m zhenzhen_image_mcp`，元数据版本为 0.3.1。发布流程核对标签与元数据一致、目标提交属于默认分支且通过该分支 push CI，再构建、验证并生成发布草稿。核对草稿中的标签、完整 SHA、默认分支 CI、安装证据及 SHA256SUMS 后公开；成员只安装已公开的发布版本。
 
 仓库维护 `src/`、元数据与锁、`.python-version`、空 `.env.example`、模板、README/MANUAL、`tests/`、`scripts/`、开发规范/契约以及 `.github/workflows/`。新模块分别负责分组契约（contracts）、供应商 JSON/SSE（provider）、任务响应与元数据（tasks）、工作流编排（api）。`.venv/`、`dist/`、缓存、测试报告和私有配置由安装/验证生成，不随源码跟踪。
 
@@ -737,7 +737,7 @@ pwsh -NoProfile -File '.\scripts\package-user.ps1' -VerifyOnly
 if ($LASTEXITCODE -ne 0) { throw '成员安装验证失败。' }
 ```
 
-输出为 `output/zhenzhen-gptimagegen2.5-mcp-0.3.0-user.zip`，内部只有 `zhenzhen-gptimagegen2.5-mcp/` 顶层目录。脚本先构建 wheel/sdist，审计白名单及秘密禁入，再在独立临时目录和空缓存中解压、联网锁定安装、执行 stdio/IPv6 回归，成功后才保留包；已有同名包拒绝覆盖。本轮只验证临时归档，不额外交付 ZIP。0.1.x 的发行包名/平铺布局不再适用。
+输出为 `output/zhenzhen-gptimagegen2.5-mcp-0.3.1-user.zip`，内部只有 `zhenzhen-gptimagegen2.5-mcp/` 顶层目录。脚本先构建 wheel/sdist，审计白名单及秘密禁入，再在独立临时目录和空缓存中解压、联网锁定安装、执行 stdio/IPv6 回归，成功后才保留包；已有同名包拒绝覆盖。本轮只验证临时归档，不额外交付 ZIP。0.1.x 的发行包名/平铺布局不再适用。
 
 收到该结构的 ZIP 后，直接解压到父目录，不预建项目目录：
 
@@ -1335,7 +1335,7 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | `uv/pwsh/python` 找不到 | 检查 PATH 和实际运行账号；安装符合第 1 节版本的工具，重启 Host 使其继承 PATH。Python 3.12 下载需要网络 |
 | `uv sync --locked` 失败 | 检查 Python、源、网络/代理、证书和缓存权限。锁与元数据不一致由开发者修复，不删除锁或加 `--upgrade` |
 | `No module named zhenzhen_image_mcp` | 核对安装目录、`src/`、元数据、初始化退出码和 `--directory`；成员不复用开发机 `.venv` |
-| 解压后多套一层目录 | 默认 clone 自动生成项目目录；可选 0.3.0 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
+| 解压后多套一层目录 | 默认 clone 自动生成项目目录；可选 0.3.1 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
 | 握手过了但绘图报缺少 Key | 协议检查不认证供应商；检查实际项目 `.env` 字段、运行账号和 ACL，调用指南看 `key_present` |
 | `.env` 空值 / 格式 / 重复 / 编码错误 | 填实际 Key、保留唯一字段、保存 UTF-8；错误必须修复，不能靠环境旧值掩盖 |
 | `.env` 不可读 | 按实际服务账号核对文件与目录 ACL；不要提升整个 Host 为管理员或给 Everyone 读取 |
