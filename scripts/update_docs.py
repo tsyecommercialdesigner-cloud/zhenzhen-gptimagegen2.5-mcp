@@ -12,6 +12,7 @@ names = [
     ".python-version",
     ".mcp.json.example",
     ".cherrystudiomcpproxy.mcp.json.example",
+    "LICENSE",
     "README.md",
     "MANUAL.md",
     "user-files.json",
