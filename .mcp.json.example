@@ -4,7 +4,7 @@
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
+        "D:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
         "run",
         "--no-sync",
         "python",

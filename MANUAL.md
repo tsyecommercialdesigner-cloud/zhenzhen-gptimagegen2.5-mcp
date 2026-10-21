@@ -14,7 +14,7 @@
 |---|---|
 | 开发目录 | `E:\collaborative-workspace\zhenzhen-gptimage2.5-mcp`；不因成员命名改动而迁移 |
 | 成员项目目录原名 | `zhenzhen-gptimagegen2.5-mcp`（用户约定） |
-| Windows 默认安装目录 | `C:\MCP\zhenzhen-gptimagegen2.5-mcp` |
+| Windows 默认安装目录 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp` |
 | Python 发行包 / 版本 | `zhenzhen-image` / `0.3.0`，来自 `pyproject.toml` |
 | Python 模块 / 入口 | `zhenzhen_image_mcp` / `python -m zhenzhen_image_mcp` |
 | 本地配置服务标识 | `zhenzhen-gptimagegen2-5-mcp` |
@@ -23,7 +23,7 @@
 | MCP 内部 serverInfo.name | `zhenzhen-gptimagegen2-5-mcp`，与本地配置名称一致 |
 | 业务 API | `https://ai.t8star.org/v1`；OpenAI 兼容 Images 接口 |
 | 后端密钥字段 | `ZHENZHEN_GPTIMAGEGEN_API_KEY` |
-| 后端密钥文件 | `C:\MCP\zhenzhen-gptimagegen2.5-mcp\.env` |
+| 后端密钥文件 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp\.env` |
 | 代理网关令牌变量 | `CHERRYSTUDIO_API_GATEWAY_API_KEY`；保存完整原始令牌，不含 `Bearer ` |
 
 服务配置名称统一将点号换为连字符；安装目录、版本、模型、模块、URL 和网关实际路由 ID 保持各自原值。更新旧配置时先检查新旧名称是否同时存在，合并为一个实例，避免重复启动或重复付费；不要通过全局替换修改整个配置文件。
@@ -83,7 +83,7 @@ $RepositoryUrl = 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptim
 $ReleaseTag = Read-Host '输入 Releases 中已通过 CI 的实际版本标签'
 $ExpectedSha = Read-Host '输入该 Release 记录的完整 40 位提交 SHA'
 if ($ReleaseTag -notmatch '^v\d+\.\d+\.\d+$' -or $ExpectedSha -notmatch '^[a-fA-F0-9]{40}$') { throw '版本或 SHA 格式不正确。' }
-$InstallRoot = 'C:\MCP'
+$InstallRoot = 'D:\MCP'
 $ProjectDir = Join-Path $InstallRoot 'zhenzhen-gptimagegen2.5-mcp'
 if (Test-Path -LiteralPath $ProjectDir) { throw '项目目录已存在，请按第 5 节更新，不能覆盖安装。' }
 New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
@@ -106,7 +106,7 @@ clone 自动创建项目目录，根目录直接包含 `src/`、`pyproject.toml`
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 $EnvPath = Join-Path $ProjectDir '.env'
 $ExamplePath = Join-Path $ProjectDir '.env.example'
 if (Test-Path -LiteralPath $EnvPath) {
@@ -127,7 +127,7 @@ ZHENZHEN_GPTIMAGEGEN_API_KEY=
 `.env` 为明文。检查文件 ACL；确认当前账号确为运行 MCP 的账号后，可授予其读写并移除继承，仅保留必要管理员/服务账号的显式权限。先核对输出，勿给 Everyone 或无关账号授权；不同账号启动的 Host 需按实际账号安排权限。
 
 ```powershell
-$EnvPath = 'C:\MCP\zhenzhen-gptimagegen2.5-mcp\.env'
+$EnvPath = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\.env'
 $McpAccount = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 Get-Acl -LiteralPath $EnvPath | Format-List Owner, AccessToString
 # 仅确认上述账号就是 MCP 运行账号后执行；不删除已有显式权限：
@@ -145,7 +145,7 @@ Get-Acl -LiteralPath $EnvPath | Format-List Owner, AccessToString
 成员运行以下脚本，默认总检查超时 30 秒，可选范围 1–300 秒：
 
 ```powershell
-pwsh -NoProfile -File 'C:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -TimeoutSeconds 30
+pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -TimeoutSeconds 30
 if ($LASTEXITCODE -ne 0) { throw 'MCP 可用性检查失败，请先排障。' }
 ```
 
@@ -156,7 +156,7 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP 可用性检查失败，请先排障。' }
 ```powershell
 $ProxyUrl = Read-Host '输入实际 MCP Proxy 完整 URL（包含真实服务器 ID）'
 if ([string]::IsNullOrWhiteSpace($ProxyUrl)) { throw 'URL 不能为空。' }
-pwsh -NoProfile -File 'C:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -ProxyUrl $ProxyUrl -TimeoutSeconds 30
+pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1' -ProxyUrl $ProxyUrl -TimeoutSeconds 30
 if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 ```
 
@@ -196,7 +196,7 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
+        "D:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
         "run",
         "--no-sync",
         "python",
@@ -233,7 +233,7 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+Set-Location -LiteralPath 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 $ConfigNames = @('.mcp.json', '.cherrystudiomcpproxy.mcp.json')
 foreach ($Name in $ConfigNames) {
   if (Test-Path -LiteralPath $Name) { throw "配置已存在，请备份并手工合并：$Name" }
@@ -272,7 +272,7 @@ notepad.exe $ConfigPath
 command = "uv"
 args = [
   "--directory",
-  "C:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
+  "D:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
   "run",
   "--no-sync",
   "python",
@@ -361,7 +361,7 @@ Claude Code 用户作用域 `.claude.json` 中合并下面完整配置对象的 
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
+        "D:\\MCP\\zhenzhen-gptimagegen2.5-mcp",
         "run",
         "--no-sync",
         "python",
@@ -415,7 +415,7 @@ foreach ($ProfileFile in $ProfileFiles) {
         command: uv
         args:
           - --directory
-          - 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+          - 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
           - run
           - --no-sync
           - python
@@ -530,7 +530,7 @@ codex
 ```powershell
 $ErrorActionPreference = 'Stop'
 Get-Command claude -ErrorAction Stop | Out-Null
-$ProjectDir = 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 if (!(Test-Path -LiteralPath (Join-Path $ProjectDir '.env') -PathType Leaf)) { throw '请先按第 2 节创建密钥文件。' }
 claude mcp get 'zhenzhen-gptimagegen2-5-mcp' *> $null
 if ($LASTEXITCODE -eq 0) { throw '服务已存在，请修改配置文件。' }
@@ -546,7 +546,7 @@ claude
 ```bash
 command -v claude >/dev/null || exit 1
 command -v uv >/dev/null || exit 1
-ProjectDir='C:/MCP/zhenzhen-gptimagegen2.5-mcp'
+ProjectDir='D:/MCP/zhenzhen-gptimagegen2.5-mcp'
 [[ -f "$ProjectDir/.env" ]] || { printf '%s\n' '请先配置 .env'; exit 1; }
 if claude mcp get 'zhenzhen-gptimagegen2-5-mcp' >/dev/null 2>&1; then
   printf '%s\n' '服务已存在，请修改配置文件。'; exit 1
@@ -562,7 +562,7 @@ claude
 ```zsh
 command -v claude >/dev/null || exit 1
 command -v uv >/dev/null || exit 1
-ProjectDir='C:/MCP/zhenzhen-gptimagegen2.5-mcp'
+ProjectDir='D:/MCP/zhenzhen-gptimagegen2.5-mcp'
 [[ -f "$ProjectDir/.env" ]] || { printf '%s\n' '请先配置 .env'; exit 1; }
 if claude mcp get 'zhenzhen-gptimagegen2-5-mcp' >/dev/null 2>&1; then
   printf '%s\n' '服务已存在，请修改配置文件。'; exit 1
@@ -582,7 +582,7 @@ $Profile = 'web'
 $Mode = Read-Host '已保存的 profile 模式：stdio 或 proxy'
 if ($Mode -eq 'stdio') {
   Get-Command uv -ErrorAction Stop | Out-Null
-  if (!(Test-Path -LiteralPath 'C:\MCP\zhenzhen-gptimagegen2.5-mcp\.env' -PathType Leaf)) { throw '请先配置项目 .env。' }
+  if (!(Test-Path -LiteralPath 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\.env' -PathType Leaf)) { throw '请先配置项目 .env。' }
 } elseif ($Mode -eq 'proxy') {
   $GatewayKey = Read-Host '完整网关令牌（不含 Bearer）' -MaskInput
   if ([string]::IsNullOrWhiteSpace($GatewayKey)) { throw '网关令牌不能为空。' }
@@ -598,7 +598,7 @@ if ($LASTEXITCODE -ne 0) { throw 'DSH 启动失败，检查 profile 与插件日
 ```bash
 command -v dsh >/dev/null || exit 1
 Profile='web'
-ProjectDir='C:/MCP/zhenzhen-gptimagegen2.5-mcp'
+ProjectDir='D:/MCP/zhenzhen-gptimagegen2.5-mcp'
 read -r -p '已保存的 profile 模式 stdio/proxy: ' Mode
 if [[ "$Mode" == stdio ]]; then
   command -v uv >/dev/null || exit 1
@@ -621,7 +621,7 @@ dsh --profile "$Profile" || exit 1
 ```zsh
 command -v dsh >/dev/null || exit 1
 Profile='web'
-ProjectDir='C:/MCP/zhenzhen-gptimagegen2.5-mcp'
+ProjectDir='D:/MCP/zhenzhen-gptimagegen2.5-mcp'
 read -r 'Mode?已保存的 profile 模式 stdio/proxy: '
 if [[ "$Mode" == stdio ]]; then
   command -v uv >/dev/null || exit 1
@@ -646,16 +646,18 @@ DSH 没有经核对的 `dsh mcp add` 子命令。独立补丁只对本次运行�
 日常启动与配置模板一致，复用已安装环境：
 
 ```powershell
-uv --directory 'C:\MCP\zhenzhen-gptimagegen2.5-mcp' run --no-sync python -m zhenzhen_image_mcp
+uv --directory 'D:\MCP\zhenzhen-gptimagegen2.5-mcp' run --no-sync python -m zhenzhen_image_mcp
 ```
 
 stdio 等待 Host 输入时没有欢迎输出属正常；手工启动后用 Ctrl+C 结束，实际可用性用第 3 节脚本判断。stdout 只写 MCP 协议，日志/异常走 stderr，不向 stdout 插入调试文本。图像输出目录以工具返回的绝对路径为准。
+
+默认安装盘符现为 `D:`，目录层级和项目目录名不变。已有其他位置的安装不会自动迁移；如需迁移，先停止服务、备份并保留 `.env`、整个 `.runtime` 及图片数据，在新目录重新安装锁定依赖（不要直接复用移动后的 `.venv`），再把 Host 指向新路径并验证连接。
 
 更新前先停用 MCP，确认所有使用该项目的子进程退出并备份当前版本与私有配置；保留 `.env` 及 ACL。使用过批量工具时，还须私有备份并保留整个 `.runtime` 检查点目录，不在数据库活动时复制，不通过删除它重置任务。新版本应来自实际仓库已通过 CI 的 Release，不在启动时自动拉代码。命令拒绝有源码修改的工作区，不执行 reset/clean、强制覆盖或自动 stash；旧版 ZIP 用户先按手册迁移到独立 clone，不覆盖原安装。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 Set-Location -LiteralPath $ProjectDir
 $Changes = @(git status --porcelain)
 if ($LASTEXITCODE -ne 0 -or $Changes.Count) { throw '不是干净的 Git 安装，请先检查并保留本地修改。' }
@@ -743,9 +745,9 @@ if ($LASTEXITCODE -ne 0) { throw '成员安装验证失败。' }
 $ErrorActionPreference = 'Stop'
 $ArchivePath = Read-Host '输入可选成员 ZIP 的完整文件路径（包含 .zip）'
 if (!(Test-Path -LiteralPath $ArchivePath -PathType Leaf)) { throw 'ZIP 文件不存在。' }
-$ProjectDir = 'C:\MCP\zhenzhen-gptimagegen2.5-mcp'
+$ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
 if (Test-Path -LiteralPath $ProjectDir) { throw '安装目录已存在，请保留私有配置并按升级流程处理。' }
-Expand-Archive -LiteralPath $ArchivePath -DestinationPath 'C:\MCP' -ErrorAction Stop
+Expand-Archive -LiteralPath $ArchivePath -DestinationPath 'D:\MCP' -ErrorAction Stop
 if (!(Test-Path -LiteralPath (Join-Path $ProjectDir 'pyproject.toml'))) { throw 'ZIP 结构错误。' }
 Set-Location -LiteralPath $ProjectDir
 uv sync --locked --no-dev
@@ -1297,7 +1299,7 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 
 整批先预检，最多 10 项、每线程最多 1000 条记录，参考图与 mask 合计最多 128 MiB；预检不产生收费 POST，但可能下载参考 URL 和探测输出目录。SQLite 在 POST 前原子记录提交权，同一项目的多个 MCP 进程也只能有一次提交尝试。供应商未给出幂等键契约，无法保证网络故障后“恰好一次成功”；本版保守保留不确定状态，可能冻结实际未发出的任务。若提交后的数据库写入失败，返回 warning，并尽量保留已知 provider_task_id，供 `get_image_task` 直接查询。
 
-数据库固定在实际项目的 `.runtime/checkpoints.sqlite3`，例如 `C:\MCP\zhenzhen-gptimagegen2.5-mcp\.runtime\checkpoints.sqlite3`，不随 Host 工作目录或输出目录变化。保存身份、请求指纹、分组、目录、状态、供应商编号和时间，不保存提示词、原图、mask 或 Key。默认不自动清理；更新需保留整个 `.runtime`，先停止所有使用该项目的 MCP 进程，再在私有位置备份整个目录。删除、恢复旧备份、重装到另一目录或换一组身份键都会失去相应防重历史；多机器之间没有分布式协调，不要借此自动重提。
+数据库固定在实际项目的 `.runtime/checkpoints.sqlite3`，例如 `D:\MCP\zhenzhen-gptimagegen2.5-mcp\.runtime\checkpoints.sqlite3`，不随 Host 工作目录或输出目录变化。保存身份、请求指纹、分组、目录、状态、供应商编号和时间，不保存提示词、原图、mask 或 Key。默认不自动清理；更新需保留整个 `.runtime`，先停止所有使用该项目的 MCP 进程，再在私有位置备份整个目录。删除、恢复旧备份、重装到另一目录或换一组身份键都会失去相应防重历史；多机器之间没有分布式协调，不要借此自动重提。
 
 原有 `generate_image`、`edit_image`、`submit_image_generation`、`submit_image_edit` 保持原行为，没有这套提交防重保证。只有一项也可以使用 `submit_image_batch` 获得检查点保护。回滚旧版后保留新数据库，旧工具须凭 provider_task_id 查询，不要按逻辑任务键重新提交。开发契约和验收标识见 [异步批量方案](docs/ASYNC-BATCH-PLAN.md)。
 
