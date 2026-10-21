@@ -2,6 +2,8 @@
 
 Windows 上的 Python stdio MCP Server，为 Agent 提供 GPT Image 2.5 Flare / Sunburst 同步生成与编辑、批量异步提交、持久化防重、任务查询和图片自动落盘。Flare 偏向快速生成，Sunburst 偏向精细编辑；选型建议来自供应商，未作模型速度/质量对比保证。精细编辑使用 Images edits，不提供 Responses 工具。
 
+当前开发代码新增 `run_image_batch`：同步批量最多 20 项、默认并发 5；异步批量最多 20 项、默认并发 5、可设至 20。异步单项和批量均在 MCP 运行时每 90 秒自动查询未完成任务并保存结果，重启恢复。现有单项生成/编辑工具可传稳定 `idempotency_key` 防重。当前发现 12 个工具；以下 v0.3.1 发布安装仍对应原先的 11 个工具，新功能尚未发布。
+
 ## 安装 v0.3.1
 
 准备 Git、PowerShell 7、uv；Python 支持 3.12，项目固定 3.12.14。默认目录 `D:\MCP\zhenzhen-gptimagegen2.5-mcp`，已有目录请使用 [更新流程](MANUAL.md#5-启动排障)，不能覆盖安装。
@@ -47,7 +49,7 @@ if ($LASTEXITCODE -ne 0) { throw '服务退出失败，请查看 stderr。' }
 
 先调用免费 `get_model_guide`。默认逆向 `group="reverse"`；使用官转须在工具参数中显式 `group="official"`，扩展参数放 `official_options`，批量则逐项声明。声明不更改供应商 Key 后台分组，非法组合在收费前拒绝，详见 [参数与流程](MANUAL.md#8-功能说明)。
 
-多图用 `submit_image_batch`：最多 10 项、默认并发 3，等待提交确认后返回；固定 `(checkpointer, thread_id, task_id)`，`get_image_batch` 恢复本地记录，`get_batch_image_task` 查询并保存。升级保留整个 `.runtime` 和用户 `.env`，不要删除数据库或换身份绕过防重。不确定提交禁止自动重发；原有单项提交工具没有检查点防重保证。
+开发版多图同步用 `run_image_batch`，异步用 `submit_image_batch`；均固定 `(checkpointer, thread_id, task_id)`，每批最多 20 项。`get_image_batch` 读取后台轮询保存的状态和文件清单，`get_batch_image_task` 仍可主动查询。升级保留整个 `.runtime` 和用户 `.env`。SQLite 使用 WAL、FULL 同步与事务租约；请求指纹包含输入图片/mask 的 SHA-256，落盘和重放校验输出哈希。不确定的收费提交不自动重发，只读查询和下载支持有限重试。单项未提供 `idempotency_key` 时仍无提交防重保证。
 
 生成/编辑收费，免费指南和协议检查不收费。NOT_START 是排队；继续查询原任务，云端 SUCCESS 后还需检查 save_status/files。实际像素可能与请求 size 不同，必须验图，不自动重新收费。本项目仅支持 Windows；其他 Host、官转高级参数与真实十图并发的未验证项见 [验收记录](docs/D-DRIVE-ACCEPTANCE.md)。
 

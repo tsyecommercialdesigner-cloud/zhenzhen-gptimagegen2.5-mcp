@@ -24,6 +24,7 @@ from .config import Settings, absolute_directory, api_key
 from .contracts import Group, OfficialOptions, image_parameters
 from .contracts import size_check as size_check
 from .provider import ProviderTransport
+from .runtime import submission_slots
 from .tasks import PENDING, TaskStore, submitted_task_id, task_payload
 from .tasks import task_id_check as task_id_check
 
@@ -96,6 +97,24 @@ class TransientQueryError(ValueError):
     """Only read-only task requests may be retried."""
 
 
+def result_manifest(result: dict) -> dict:
+    """Persist only local result metadata, never upstream prompts, URLs or image bodies."""
+    return {
+        k: result[k]
+        for k in ("status", "task_id", "group", "output_dir", "files", "save_status")
+        if k in result
+    }
+
+
+def verify_manifest(result: dict) -> None:
+    for file in result.get("files", []):
+        path = Path(file["path"])
+        if path.is_symlink() or not path.is_file() or path.stat().st_size != file["bytes"]:
+            raise ValueError("Saved result file missing or changed; do not resubmit the paid task")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != file["sha256"]:
+            raise ValueError("Saved result file hash mismatch; do not resubmit the paid task")
+
+
 @dataclass
 class PreparedImages:
     endpoint: str
@@ -149,6 +168,8 @@ class API:
             raise ValueError(safe_error(exc, key)) from None
 
     async def store_images(self, payload: dict, directory: Path) -> dict:
+        from .batch import checkpoint_io
+
         files, failures = [], []
         items = image_items(payload)
         if len(items) > media.MAX_IMAGES:
@@ -162,7 +183,7 @@ class API:
                     if item.get("b64_json")
                     else await media.download(item["url"])
                 )
-                files.append({"index": index, **media.save_image(data, directory)})
+                files.append({"index": index, **await checkpoint_io(media.save_image, data, directory)})
             except (ValueError, OSError, httpx.HTTPError, TimeoutError) as exc:
                 failures.append({"index": index, "url": item.get("url"), "error": safe_error(exc)})
         return {
@@ -242,6 +263,10 @@ class API:
         return PreparedImages(endpoint, kwargs, directory, group, fingerprint, input_bytes)
 
     async def send_images(self, prepared: PreparedImages, asynchronous: bool) -> dict:
+        async with submission_slots(asynchronous):
+            return await self._send_images(prepared, asynchronous)
+
+    async def _send_images(self, prepared: PreparedImages, asynchronous: bool) -> dict:
         response = await self.request("POST", prepared.endpoint, **prepared.kwargs)
         directory, group = prepared.directory, prepared.group
         if asynchronous:
@@ -252,12 +277,24 @@ class API:
                 "group": group,
                 "output_dir": str(directory),
                 "next_tool": "get_image_task or wait_image_task",
+                "auto_poll_interval": 90,
             }
             try:
                 TaskStore(self.settings.output_dir).record(task_id, directory, group)
             except OSError:
                 result["warning"] = (
                     "Task submitted; destination metadata could not be saved. Pass output_dir when polling."
+                )
+            from .batch import checkpoint_io
+            from .checkpoints import CheckpointStore
+
+            try:
+                await checkpoint_io(
+                    CheckpointStore().watch, self.settings.base_url, task_id, str(directory), group
+                )
+            except (ValueError, OSError):
+                result["warning"] = (
+                    "Task accepted but automatic polling registration failed; preserve task_id and query manually."
                 )
             return result
         return {
@@ -279,31 +316,69 @@ class API:
         output_dir: str | None = None,
         group: Group = "reverse",
         official_options: OfficialOptions | dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
     ) -> dict:
         prepared = await self.prepare_images(
             prompt, model, images, size, quality, asynchronous, edit, output_dir, group, official_options
         )
+        if idempotency_key is not None:
+            from .batch import BatchService, checkpoint_io
+            from .contracts import BatchImageTask
+
+            task = BatchImageTask(
+                task_id=idempotency_key,
+                prompt=prompt,
+                model=model,  # type: ignore[arg-type]
+                operation="edit" if edit else "generate",
+            )
+            batch = await BatchService(api=self).execute(
+                "single", "default", [task], [prepared], 1, asynchronous
+            )
+            row = batch["tasks"][0]
+            if row["status"] == "FAILURE":
+                raise ValueError(f"Task {idempotency_key}: FAILURE; do not resubmit")
+            if row.get("result"):
+                await checkpoint_io(verify_manifest, row["result"])
+                return {
+                    **row["result"],
+                    "idempotency_key": idempotency_key,
+                    "reused": row["reused"],
+                    **({"warning": row["warning"]} if row.get("warning") else {}),
+                }
+            if asynchronous and row["provider_task_id"]:
+                return {
+                    "status": "SUBMITTED",
+                    "task_id": row["provider_task_id"],
+                    "group": group,
+                    "output_dir": str(prepared.directory),
+                    "auto_poll_interval": 90,
+                    "idempotency_key": idempotency_key,
+                    "reused": row["reused"],
+                }
+            raise ValueError(
+                f"Task {idempotency_key}: {row['status']}; do not resubmit or change the idempotency key"
+            )
         return await self.send_images(prepared, asynchronous)
 
-    async def fetch_task(self, task_id: str) -> dict:
+    async def fetch_task(self, task_id: str, *, attempts: int = 3) -> dict:
         task_id_check(task_id)
-        attempts = 0
+        tried = 0
         try:
             # This budget includes all attempts and backoff, not one budget per retry.
             async with asyncio.timeout(self.settings.timeout):
-                for attempt in range(3):
-                    attempts += 1
+                for attempt in range(attempts):
+                    tried += 1
                     try:
                         envelope = await self.request("GET", "/images/tasks/" + quote(task_id, safe=""))
                         break
                     except TransientQueryError:
-                        if attempt == 2:
+                        if attempt == attempts - 1:
                             raise
                         await asyncio.sleep(2**attempt)
         except (ValueError, TimeoutError) as exc:
             reason = str(exc) or "Query time budget exceeded"
             raise ValueError(
-                f"Task {task_id}: query failed after {attempts} attempt(s): {reason}. "
+                f"Task {task_id}: query failed after {tried} attempt(s): {reason}. "
                 "Use get_image_task or wait_image_task with the same task_id; do not resubmit."
             ) from None
         return task_payload(envelope, task_id)
@@ -311,8 +386,17 @@ class API:
     async def query(self, task_id: str, output_dir: str | None = None, save: bool = True) -> dict:
         return await self.task_result(task_id, await self.fetch_task(task_id), output_dir, save)
 
-    async def task_result(self, task_id: str, task: dict, output_dir: str | None, save: bool) -> dict:
+    async def task_result(
+        self, task_id: str, task: dict, output_dir: str | None, save: bool, *, record: bool = True
+    ) -> dict:
+        from .batch import checkpoint_io
+        from .checkpoints import CheckpointStore
+
         if task["status"] == "FAILURE":
+            if record:
+                await checkpoint_io(
+                    CheckpointStore().observe_provider, self.settings.base_url, task_id, "FAILURE", None
+                )
             reason = safe_error(ValueError(str(task.get("fail_reason") or "Provider task failed")))
             raise ValueError(f"Task {task_id}: FAILURE: {reason}; do not resubmit automatically")
         result = {
@@ -336,13 +420,21 @@ class API:
             if not isinstance(payload, dict):
                 raise ValueError("Successful task has no image result object")
             result.update(await self.store_images(payload, self.destination(output_dir)))
+        if record:
+            await checkpoint_io(
+                CheckpointStore().observe_provider,
+                self.settings.base_url,
+                task_id,
+                task["status"],
+                result_manifest(result),
+            )
         return result
 
     async def wait(
         self, task_id: str, timeout_seconds: float, poll_interval: float, output_dir: str | None
     ) -> dict:
-        if not 1 <= timeout_seconds <= 300 or not 1 <= poll_interval <= 60:
-            raise ValueError("timeout_seconds must be 1..300 and poll_interval 1..60")
+        if not 1 <= timeout_seconds <= 300 or not 1 <= poll_interval <= 300:
+            raise ValueError("timeout_seconds must be 1..300 and poll_interval 1..300")
         deadline = time.monotonic() + timeout_seconds
         last = {"task_id": task_id, "status": "UNKNOWN"}
         try:

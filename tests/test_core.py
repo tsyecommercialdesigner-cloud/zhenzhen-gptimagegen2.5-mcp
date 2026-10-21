@@ -50,8 +50,11 @@ class APIContractTests(unittest.IsolatedAsyncioTestCase):
         self.api.sdk = sdk
         self.key_patch = patch("zhenzhen_image_mcp.api.api_key", return_value="fake-test-key")
         self.key_patch.start()
+        self.ledger_patch = patch("zhenzhen_image_mcp.checkpoints.PROJECT_DIR", self.root)
+        self.ledger_patch.start()
 
     def tearDown(self):
+        self.ledger_patch.stop()
         self.key_patch.stop()
         self.temp.cleanup()
 

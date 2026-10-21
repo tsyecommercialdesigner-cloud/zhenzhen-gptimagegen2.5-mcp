@@ -68,6 +68,13 @@ class ProxyNormalizationTests(unittest.TestCase):
 
 
 class RealSDKProxyTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        mock = patch("zhenzhen_image_mcp.checkpoints.PROJECT_DIR", Path(temporary.name))
+        mock.start()
+        self.addCleanup(mock.stop)
+
     async def test_original_failure_reproduced_then_client_routes_preserved(self):
         with patch.dict(os.environ, PROXY_ENV):
             with self.assertRaises(httpx2.InvalidURL):

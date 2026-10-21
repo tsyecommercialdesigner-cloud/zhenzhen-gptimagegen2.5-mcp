@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Callable
 from typing import Any
 
-from .api import API, PreparedImages, safe_error
+from .api import API, PreparedImages, result_manifest, safe_error, verify_manifest
 from .checkpoints import UNCERTAIN, CheckpointStore, scope_check
 from .contracts import BatchImageTask, image_parameters
 
@@ -41,6 +42,8 @@ def public_task(row: dict[str, Any], *, reused: bool = True) -> dict[str, Any]:
         result["error"] = row["error"]
     if row["status"] == "SUBMITTING":
         result["warning"] = "Submission active or interrupted. Never reclaim or resubmit automatically."
+    if row.get("result_json") and row["status"] != "FAILURE":
+        result["result"] = json.loads(row["result_json"])
     return result
 
 
@@ -50,11 +53,18 @@ class BatchService:
         self.store = store if store is not None else CheckpointStore()
 
     async def submit(
-        self, checkpointer: str, thread_id: str, tasks: list[BatchImageTask], max_concurrency: int = 3
+        self,
+        checkpointer: str,
+        thread_id: str,
+        tasks: list[BatchImageTask],
+        max_concurrency: int = 5,
+        *,
+        asynchronous: bool = True,
     ) -> dict:
         scope_check(checkpointer, thread_id)
-        if not 1 <= len(tasks) <= 10 or not 1 <= max_concurrency <= 10:
-            raise ValueError("Batch size and max_concurrency must be 1..10")
+        limit = 20 if asynchronous else 5
+        if not 1 <= len(tasks) <= 20 or not 1 <= max_concurrency <= limit:
+            raise ValueError(f"Batch size must be 1..20 and max_concurrency must be 1..{limit}")
         if len({task.task_id for task in tasks}) != len(tasks):
             raise ValueError("Duplicate task_id within the batch; no POST sent")
         # Validate every item's parameter contract before any file/URL preparation or paid request.
@@ -67,7 +77,7 @@ class BatchService:
                 task.group,
                 task.official_options,
                 edit=task.operation == "edit",
-                asynchronous=True,
+                asynchronous=asynchronous,
             )
             if task.operation == "edit" and not task.images:
                 raise ValueError(f"Editing requires images for task_id={task.task_id}; no POST sent")
@@ -80,7 +90,7 @@ class BatchService:
                 task.images,
                 task.size,
                 task.quality,
-                asynchronous=True,
+                asynchronous=asynchronous,
                 edit=task.operation == "edit",
                 output_dir=task.output_dir,
                 group=task.group,
@@ -90,6 +100,17 @@ class BatchService:
             if total_bytes > 128 * 1024 * 1024:
                 raise ValueError("Batch input images/masks exceed 128 MiB; no POST sent")
             prepared.append(request)
+        return await self.execute(checkpointer, thread_id, tasks, prepared, max_concurrency, asynchronous)
+
+    async def execute(
+        self,
+        checkpointer: str,
+        thread_id: str,
+        tasks: list[BatchImageTask],
+        prepared: list[PreparedImages],
+        max_concurrency: int,
+        asynchronous: bool,
+    ) -> dict:
         await checkpoint_io(
             self.store.reserve,
             checkpointer,
@@ -111,14 +132,19 @@ class BatchService:
             async with semaphore:
                 claimed = await checkpoint_io(self.store.claim, checkpointer, thread_id, task.task_id)
                 if not claimed:
-                    return public_task(
+                    result = public_task(
                         await checkpoint_io(self.store.get, checkpointer, thread_id, task.task_id)
                     )
+                    if result.get("result"):
+                        await checkpoint_io(verify_manifest, result["result"])
+                    return result
                 provider_id = None
                 error = None
+                response = None
                 try:
-                    response = await self.api.send_images(request, asynchronous=True)
-                    provider_id = response["task_id"]
+                    response = await self.api.send_images(request, asynchronous=asynchronous)
+                    if asynchronous:
+                        provider_id = response["task_id"]
                 except asyncio.CancelledError:
                     try:
                         await checkpoint_io(self.store.finish, checkpointer, thread_id, task.task_id, None)
@@ -129,7 +155,18 @@ class BatchService:
                     # Conservative after the durable claim: even malformed 200s may be billable.
                     error = safe_error(exc) if isinstance(exc, ValueError) else type(exc).__name__
                 try:
-                    await checkpoint_io(self.store.finish, checkpointer, thread_id, task.task_id, provider_id)
+                    if not asynchronous and response is not None:
+                        await checkpoint_io(
+                            self.store.complete_sync,
+                            checkpointer,
+                            thread_id,
+                            task.task_id,
+                            result_manifest(response),
+                        )
+                    else:
+                        await checkpoint_io(
+                            self.store.finish, checkpointer, thread_id, task.task_id, provider_id
+                        )
                 except (ValueError, OSError):
                     # Return an acknowledged ID even if its checkpoint could not be committed.
                     return {
@@ -140,7 +177,14 @@ class BatchService:
                         "group": request.group,
                         "reused": False,
                         "error": UNCERTAIN,
-                        "warning": "Checkpoint write failed. Preserve provider_task_id and query get_image_task directly.",
+                        "warning": "Checkpoint write failed. Preserve provider_task_id and query get_image_task directly."
+                        if asynchronous
+                        else "Checkpoint write failed. Preserve returned file paths and hashes; do not resubmit.",
+                        **(
+                            {"result": result_manifest(response)}
+                            if response is not None and not asynchronous
+                            else {}
+                        ),
                     }
                 result = public_task(
                     await checkpoint_io(self.store.get, checkpointer, thread_id, task.task_id),
@@ -148,6 +192,8 @@ class BatchService:
                 )
                 if error:
                     result["warning"] = error
+                elif response is not None and response.get("warning"):
+                    result["warning"] = response["warning"]
                 return result
 
         jobs = [asyncio.create_task(submit_one(t, p)) for t, p in zip(tasks, prepared, strict=True)]
@@ -164,11 +210,19 @@ class BatchService:
             "checkpointer": checkpointer,
             "thread_id": thread_id,
             "status": "ATTENTION_REQUIRED"
-            if any(row["status"] in {"SUBMISSION_UNCERTAIN", "SUBMITTING", "FAILURE"} for row in results)
-            else "ACCEPTED",
+            if any(
+                row["status"] in {"SUBMISSION_UNCERTAIN", "SUBMITTING", "FAILURE"}
+                or row.get("result", {}).get("save_status") in {"partial", "failed", "no_images"}
+                for row in results
+            )
+            else "ACCEPTED"
+            if asynchronous
+            else "COMPLETED",
             "tasks": results,
             "next_tool": "get_batch_image_task",
-            "note": "Only submission acknowledgements were awaited; image generation continues upstream. Reuse all identity keys.",
+            "note": "Asynchronous tasks are polled every 90 seconds while the MCP server runs. Reuse all identity keys."
+            if asynchronous
+            else "Synchronous results are hash-verified and persisted; reuse all identity keys.",
         }
 
     async def snapshot(self, checkpointer: str, thread_id: str) -> dict:
@@ -192,7 +246,10 @@ class BatchService:
     ) -> dict:
         row = await checkpoint_io(self.store.get, checkpointer, thread_id, task_id)
         if row["provider_task_id"] is None:
-            return {"checkpointer": checkpointer, "thread_id": thread_id, **public_task(row)}
+            local = public_task(row)
+            if save and local.get("result"):
+                await checkpoint_io(verify_manifest, local["result"])
+            return {"checkpointer": checkpointer, "thread_id": thread_id, **local}
         if row["base_url"] != self.api.settings.base_url:
             raise ValueError(
                 "Checkpoint provider base URL differs; restore the original configuration to query"

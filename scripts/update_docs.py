@@ -81,7 +81,7 @@ examples = {
     "submit_image_batch": {
         "checkpointer": "product-detail-pages",
         "thread_id": "blue-bag-20261020",
-        "max_concurrency": 3,
+        "max_concurrency": 5,
         "tasks": [
             {
                 "task_id": "page_01",
@@ -106,12 +106,13 @@ examples = {
         "save": True,
     },
     "get_image_task": {"task_id": "替换为提交返回的真实任务ID", "save": True},
-    "wait_image_task": {"task_id": "替换为提交返回的真实任务ID", "timeout_seconds": 60, "poll_interval": 5},
+    "wait_image_task": {"task_id": "替换为提交返回的真实任务ID", "timeout_seconds": 180, "poll_interval": 90},
     "download_image": {
         "url": "https://example.com/replace-with-real-result.png",
         "output_dir": "C:\\MCP\\zhenzhen-images",
     },
 }
+examples["run_image_batch"] = {**examples["submit_image_batch"], "thread_id": "blue-bag-sync-20261021"}
 sections = []
 for tool in inventory["tools"]:
     s = tool["inputSchema"]

@@ -1,0 +1,101 @@
+{
+  "scope": "One real paid run only: provider acceptance of five concurrent synchronous requests; not an end-to-end image delivery or model-quality acceptance.",
+  "started_at": "2026-10-22T06:32:26.291674+08:00",
+  "model": "gpt-image-2.5-flare",
+  "declared_group": "reverse",
+  "size": "1024x1024",
+  "quality": "low",
+  "provider_host": "ai.t8star.org",
+  "endpoint": "POST /v1/images/generations",
+  "paid_post_requests_observed": 5,
+  "automatic_post_retries": 0,
+  "peak_in_flight": 5,
+  "all_five_requests_started_before_first_response_headers": true,
+  "provider_concurrency_passed": true,
+  "http_statuses": [
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "elapsed_seconds": 32.83,
+  "request_events": [
+    {
+      "index": 1,
+      "send_started_seconds": 0.5367,
+      "http_status": 200,
+      "response_headers_seconds": 17.2093
+    },
+    {
+      "index": 2,
+      "send_started_seconds": 0.5369,
+      "http_status": 200,
+      "response_headers_seconds": 18.0261
+    },
+    {
+      "index": 3,
+      "send_started_seconds": 0.5371,
+      "http_status": 200,
+      "response_headers_seconds": 18.8538
+    },
+    {
+      "index": 4,
+      "send_started_seconds": 0.5372,
+      "http_status": 200,
+      "response_headers_seconds": 17.3284
+    },
+    {
+      "index": 5,
+      "send_started_seconds": 0.5362,
+      "http_status": 200,
+      "response_headers_seconds": 18.4712
+    }
+  ],
+  "local_image_delivery_passed": false,
+  "saved_files": 0,
+  "tasks": [
+    {
+      "task_id": "sync_probe_1",
+      "status": "SUCCESS",
+      "save_status": "failed",
+      "reused": false,
+      "warning": null
+    },
+    {
+      "task_id": "sync_probe_2",
+      "status": "SUCCESS",
+      "save_status": "failed",
+      "reused": false,
+      "warning": null
+    },
+    {
+      "task_id": "sync_probe_3",
+      "status": "SUCCESS",
+      "save_status": "failed",
+      "reused": false,
+      "warning": null
+    },
+    {
+      "task_id": "sync_probe_4",
+      "status": "SUCCESS",
+      "save_status": "failed",
+      "reused": false,
+      "warning": null
+    },
+    {
+      "task_id": "sync_probe_5",
+      "status": "SUCCESS",
+      "save_status": "failed",
+      "reused": false,
+      "warning": null
+    }
+  ],
+  "limitations": [
+    "All five requests completed with provider image results, but image downloads/saves failed for all five tasks. The batch manifest did not retain specific download error details; cause is unconfirmed.",
+    "No file hashes could be verified because no image was saved. The original end-to-end helper correctly exited nonzero; this report separately evaluates the user-requested provider concurrency criterion.",
+    "No additional paid calls, resubmissions, other models, async generation, Windows Host acceptance or invoice/balance audit were performed.",
+    "Overlapping successful HTTP requests establish API acceptance at concurrency 5 for this account/run, not a guarantee of GPU scheduling, sustained throughput, every model/group, or future provider quotas."
+  ],
+  "original_local_report_sha256": "8b94f5e082608c85666aa547044623ec7f86dbc8a855de9c2346ae25b8975837"
+}

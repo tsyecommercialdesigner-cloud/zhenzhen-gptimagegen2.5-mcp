@@ -9,6 +9,7 @@ import hashlib
 import io
 import ipaddress
 import os
+import random
 import socket
 import tempfile
 import warnings
@@ -62,28 +63,46 @@ def validate_mask(data: bytes, first_image: bytes) -> None:
             raise ValueError("mask must have alpha and match the first input image dimensions")
 
 
+class TransientDownloadError(ValueError):
+    pass
+
+
 async def download(url: str) -> bytes:
+    """Retry only transient read failures, within one total download budget."""
     async with asyncio.timeout(120):
-        # A distinct client, no default authorization, no environment proxy credentials.
-        async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
-            for _ in range(6):
-                await public_url(url)
-                async with client.stream("GET", url) as response:
-                    if response.is_redirect:
-                        if "location" not in response.headers:
-                            raise ValueError("Image redirect has no Location")
-                        url = str(response.url.join(response.headers["location"]))
-                        continue
-                    if response.status_code != 200:
-                        raise ValueError(f"Image download HTTP {response.status_code}")
-                    data = bytearray()
-                    async for chunk in response.aiter_bytes():
-                        data.extend(chunk)
-                        if len(data) > MAX_IMAGE_BYTES:
-                            raise ValueError("Image download exceeds the local 50 MiB limit")
-                    image_info(bytes(data))
-                    return bytes(data)
-            raise ValueError("Too many image redirects")
+        for attempt in range(3):
+            try:
+                return await _download_once(url)
+            except (httpx.TransportError, TransientDownloadError):
+                if attempt == 2:
+                    raise
+                await asyncio.sleep(2**attempt + random.uniform(0, 0.25))
+    raise ValueError("Image download did not complete")
+
+
+async def _download_once(url: str) -> bytes:
+    # A distinct client, no default authorization, no environment proxy credentials.
+    async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
+        for _ in range(6):
+            await public_url(url)
+            async with client.stream("GET", url) as response:
+                if response.is_redirect:
+                    if "location" not in response.headers:
+                        raise ValueError("Image redirect has no Location")
+                    url = str(response.url.join(response.headers["location"]))
+                    continue
+                if response.status_code in {408, 429, 500, 502, 503, 504}:
+                    raise TransientDownloadError(f"Image download HTTP {response.status_code}")
+                if response.status_code != 200:
+                    raise ValueError(f"Image download HTTP {response.status_code}")
+                data = bytearray()
+                async for chunk in response.aiter_bytes():
+                    data.extend(chunk)
+                    if len(data) > MAX_IMAGE_BYTES:
+                        raise ValueError("Image download exceeds the local 50 MiB limit")
+                image_info(bytes(data))
+                return bytes(data)
+        raise ValueError("Too many image redirects")
 
 
 def decode_image(value: str) -> bytes:
@@ -145,6 +164,8 @@ def save_image(data: bytes, directory: Path | str) -> dict:
         except FileExistsError:
             if final.is_symlink() or hashlib.sha256(final.read_bytes()).hexdigest() != digest:
                 raise ValueError("Concurrent output conflict")
+        if final.is_symlink() or hashlib.sha256(final.read_bytes()).hexdigest() != digest:
+            raise ValueError("Published output hash mismatch; refusing to report success")
     finally:
         Path(tmp).unlink(missing_ok=True)
     return {"path": str(final), "mime_type": mime, "bytes": len(data), "sha256": digest, "reused": False}

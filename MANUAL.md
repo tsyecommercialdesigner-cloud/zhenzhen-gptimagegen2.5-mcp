@@ -135,7 +135,7 @@ pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1
 if ($LASTEXITCODE -ne 0) { throw '协议检查失败，请先排障。' }
 ```
 
-成功退出码 0，输出含 passed=true、transport=stdio、tools=11、prompts=1、resources=1、paid_calls=0。它在不同工作目录下启动实际子进程，检查 legacy 初始化、发现、资源/提示访问、免费指南及非法模型在联网前拒绝；失败非零并返回脱敏诊断。缺少 Key 不妨碍发现，key_present=true 也不证明供应商鉴权成功。
+当前开发代码成功退出码 0，输出含 passed=true、transport=stdio、tools=12、prompts=1、resources=1、paid_calls=0；已发布 v0.3.1 为 11 个工具。它在不同工作目录下启动实际子进程，检查 legacy 初始化、发现、资源/提示访问、免费指南及非法模型在联网前拒绝；失败非零并返回脱敏诊断。缺少 Key 不妨碍发现，key_present=true 也不证明供应商鉴权成功。
 
 代理维护者可在当前 shell 输入网关原始令牌后运行完整能力检查；本脚本需要本地后端运行环境，仅连接远端的用户直接在自己的 Host 检查工具与免费指南即可：
 
@@ -163,7 +163,7 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 
 ## 4. 客户端配置
 
-同一 Agent 会话选择直接 stdio 或消费代理，避免同一后端重复启用。添加后都要保存、启用、发现 11 个工具、绑定目标助手/Agent、按需授权工具，再免费调用 get_model_guide。真正绘图需要另行明确授权。
+同一 Agent 会话选择直接 stdio 或消费代理，避免同一后端重复启用。添加后都要保存、启用、发现当前开发版 12 个工具（v0.3.1 为 11 个）、绑定目标助手/Agent、按需授权工具，再免费调用 get_model_guide。真正绘图需要另行明确授权。
 
 | 六项覆盖 | 本项目说明 |
 |---|---|
@@ -237,7 +237,7 @@ foreach ($Name in $Names) {
 ### Cherry Studio：后端与消费代理的操作
 
 1. 在设置的 MCP 服务器入口新增 stdio，名称与 command/逐行 args 按本地模板；支持相应 JSON 导入时导入模板，无 cwd、无业务 Key env。界面命名因版本而异，本轮未重测 GUI。
-2. 保存、启用并检查 11 个工具；在目标助手/Agent 中选择此服务，调用 get_model_guide，必要时修复项目 .env 后重启实际 MCP。
+2. 保存、启用并检查开发版 12 个工具（v0.3.1 为 11 个）；在目标助手/Agent 中选择此服务，调用 get_model_guide，必要时修复项目 .env 后重启实际 MCP。
 3. 需要代理才在兼容版本启用 API Gateway/MCP Proxy，记录实际 URL、路由 ID、原始网关令牌。先完成后端验收，再连接代理。
 4. 消费 Host 选择 HTTP/Streamable HTTP，填实际 URL 和该 Host 支持的私有认证；保存、启用、绑定助手并发现工具，调用免费指南。仅开启网关不能代替消费 Host 配置；只消费远端的人不安装后端。
 
@@ -292,7 +292,7 @@ Remove-Variable GatewayKey
 codex
 ```
 
-保存后重启/重新加载该 MCP，检查启用状态、11 个工具与权限，调用 get_model_guide。Codex 不自动将模板 .mcp.json 当作 TOML 配置。
+保存后重启/重新加载该 MCP，检查启用状态、开发版 12 个工具与权限，调用 get_model_guide。Codex 不自动将模板 .mcp.json 当作 TOML 配置。
 
 **环境兼容例外：**默认后端自己读取 .env；仅文件未定义 Key 时，需要转发父进程环境可在同一个 stdio 表内追加下面字段。不要另建重复实例，不将空 .env 当作缺失：
 
@@ -455,7 +455,7 @@ foreach ($PatchFile in $PatchFiles) {
 2. 同一目标实例已存在时就地合并，不能重复追加。id 是不冲突的实例 ID，name 是包名，serverName 是命名空间，需匹配 `[A-Za-z0-9_-]{1,32}`。DSH 用 29 字符代理别名，不照搬超过上限的通用代理全名。不要编辑共享 bundle。
 3. stdio 先完成后端安装和 .env；HTTP 先完成网关与真实路由 ID 替换，并按前文掩码输入设置启动客户端父进程的网关令牌。DSH 的 `streamable-http` 不等于通用 JSON 的 `streamableHTTP`。`!!js` 由 DSH 解释，普通 YAML 不执行或自动插值；本地静态验证不求值真实凭据。
 4. 保存每份实际使用的 profile。原生 DSH 从设置好环境的 shell 执行 `dsh --profile web`；App 完全退出后重启并确认加载 desktop；Multica 在其实际管理入口激活 multica 或重启关联 DSH。后两者界面/运行时未在本轮联调，不能用启动 npm web 的结果替代。
-5. 检查插件加载日志，发现 11 个工具且无 create_response。在目标 Agent 预设中启用/允许工具，调用免费 get_model_guide；以实际发现的命名空间为准。Tools 可用不证明 Prompt/Resource 已桥接，600000 毫秒是 Host 等待设置，不取消云端任务。
+5. 检查插件加载日志，发现开发版 12 个工具且无 create_response。在目标 Agent 预设中启用/允许工具，调用免费 get_model_guide；以实际发现的命名空间为准。Tools 可用不证明 Prompt/Resource 已桥接，600000 毫秒是 Host 等待设置，不取消云端任务。
 
 profile 备份含私有配置，只留本机并限制访问，不提交/打包。本手册不提供会重写现有 YAML 的自动拼接命令。额外 `--patch` 仅叠加到一次启动，不能与持久 profile 重复加载同一实例。
 
@@ -741,7 +741,9 @@ GitHub Release 默认提供源码/构建产物及校验资料，不保证包含�
 - `src/zhenzhen_image_mcp/config.py`
 - `src/zhenzhen_image_mcp/contracts.py`
 - `src/zhenzhen_image_mcp/media.py`
+- `src/zhenzhen_image_mcp/monitor.py`
 - `src/zhenzhen_image_mcp/provider.py`
+- `src/zhenzhen_image_mcp/runtime.py`
 - `src/zhenzhen_image_mcp/server.py`
 - `src/zhenzhen_image_mcp/smoke.py`
 - `src/zhenzhen_image_mcp/tasks.py`
@@ -808,6 +810,7 @@ if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 | `output_dir` | string / null | 否 | `null` | 可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。  |
 | `group` | string | 否 | `"reverse"` | 分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。 enum=['reverse', 'official'] |
 | `official_options` | OfficialOptions / null | 否 | `null` | 仅 group="official" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。  |
+| `idempotency_key` | string / null | 否 | `null` | 可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。  |
 
 `OfficialOptions` 对象字段：
 - `n`：integer / null，可选；生成图片数量，1–10。
@@ -847,6 +850,7 @@ if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 | `output_dir` | string / null | 否 | `null` | 可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。  |
 | `group` | string | 否 | `"reverse"` | 分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。 enum=['reverse', 'official'] |
 | `official_options` | OfficialOptions / null | 否 | `null` | 仅 group="official" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。  |
+| `idempotency_key` | string / null | 否 | `null` | 可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。  |
 
 `OfficialOptions` 对象字段：
 - `n`：integer / null，可选；生成图片数量，1–10。
@@ -876,7 +880,7 @@ if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 
 ### `submit_image_generation`
 
-POST generations?async=true 提交收费异步绘图，立即返回 task_id。必须继续查询才能自动落盘。
+提交收费异步绘图并返回 task_id；服务存活时每90秒自动查询并落盘。可选 idempotency_key 防重。
 
 | 参数 | 类型 | 必需 | 默认 | 约束/说明 |
 |---|---|---|---|---|
@@ -888,6 +892,7 @@ POST generations?async=true 提交收费异步绘图，立即返回 task_id。�
 | `output_dir` | string / null | 否 | `null` | 可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。  |
 | `group` | string | 否 | `"reverse"` | 分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。 enum=['reverse', 'official'] |
 | `official_options` | OfficialOptions / null | 否 | `null` | 仅 group="official" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。  |
+| `idempotency_key` | string / null | 否 | `null` | 可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。  |
 
 `OfficialOptions` 对象字段：
 - `n`：integer / null，可选；生成图片数量，1–10。
@@ -915,7 +920,7 @@ POST generations?async=true 提交收费异步绘图，立即返回 task_id。�
 
 ### `submit_image_edit`
 
-POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 task_id，之后查询并落盘。
+提交收费异步编辑，以 image[] 上传；每90秒自动查询并落盘。可选 idempotency_key 防重。
 
 | 参数 | 类型 | 必需 | 默认 | 约束/说明 |
 |---|---|---|---|---|
@@ -927,6 +932,7 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 | `output_dir` | string / null | 否 | `null` | 可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。  |
 | `group` | string | 否 | `"reverse"` | 分组声明：默认 reverse（逆向）；仅用户明确使用官转时传 official。此字段不发送上游、不改变密钥后台分组。 enum=['reverse', 'official'] |
 | `official_options` | OfficialOptions / null | 否 | `null` | 仅 group="official" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。  |
+| `idempotency_key` | string / null | 否 | `null` | 可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。  |
 
 `OfficialOptions` 对象字段：
 - `n`：integer / null，可选；生成图片数量，1–10。
@@ -957,14 +963,14 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 
 ### `submit_image_batch`
 
-一次并发提交1–10项收费异步生成/编辑，默认并发3。收到任务编号即返回，不等待成图。同一(checkpointer,thread_id,task_id)及参数复用记录，参数冲突在提交前拒绝；不确定提交永不自动重发。
+一次提交1–20项收费异步生成/编辑，默认并发5、最多20。收到编号即返回，后台每90秒查询并落盘。同一(checkpointer,thread_id,task_id)及参数复用，冲突拒绝；不确定提交永不自动重发。
 
 | 参数 | 类型 | 必需 | 默认 | 约束/说明 |
 |---|---|---|---|---|
 | `checkpointer` | string | 是 | `—` | 稳定的本地检查点命名空间/会话键，1–128字符。  |
 | `thread_id` | string | 是 | `—` | 稳定的本地检查点命名空间/会话键，1–128字符。  |
-| `tasks` | array[BatchImageTask] | 是 | `—` |  minItems=1; maxItems=10 |
-| `max_concurrency` | integer | 否 | `3` |  minimum=1; maximum=10 |
+| `tasks` | array[BatchImageTask] | 是 | `—` |  minItems=1; maxItems=20 |
+| `max_concurrency` | integer | 否 | `5` |  minimum=1; maximum=20 |
 
 `BatchImageTask` 对象字段：
 - `task_id`：string，必填；Agent 指定的稳定任务键；重试不能改名。
@@ -998,7 +1004,71 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 {
   "checkpointer": "product-detail-pages",
   "thread_id": "blue-bag-20261020",
-  "max_concurrency": 3,
+  "max_concurrency": 5,
+  "tasks": [
+    {
+      "task_id": "page_01",
+      "operation": "generate",
+      "prompt": "蓝色垃圾袋详情页首图",
+      "model": "gpt-image-2.5-flare"
+    },
+    {
+      "task_id": "page_02",
+      "operation": "edit",
+      "prompt": "保持商品外观，替换为厨房场景",
+      "model": "gpt-image-2.5-sunburst",
+      "images": [
+        "C:\\Pictures\\product.png"
+      ]
+    }
+  ]
+}
+```
+
+### `run_image_batch`
+
+同步执行1–20项收费生成/编辑，默认并发5，完成并校验落盘后返回。稳定三元组防重；重放验证文件SHA-256，不重复收费；超时/未知结果禁止重发。
+
+| 参数 | 类型 | 必需 | 默认 | 约束/说明 |
+|---|---|---|---|---|
+| `checkpointer` | string | 是 | `—` | 稳定的本地检查点命名空间/会话键，1–128字符。  |
+| `thread_id` | string | 是 | `—` | 稳定的本地检查点命名空间/会话键，1–128字符。  |
+| `tasks` | array[BatchImageTask] | 是 | `—` |  minItems=1; maxItems=20 |
+| `max_concurrency` | integer | 否 | `5` |  minimum=1; maximum=5 |
+
+`BatchImageTask` 对象字段：
+- `task_id`：string，必填；Agent 指定的稳定任务键；重试不能改名。
+- `operation`：string，可选； ['generate', 'edit']
+- `prompt`：string，必填；
+- `model`：string，必填； ['gpt-image-2.5-flare', 'gpt-image-2.5-sunburst']
+- `images`：array[string] / null，可选；
+- `size`：string / null，可选；
+- `quality`：string / null，可选；
+- `output_dir`：string / null，可选；
+- `group`：string，可选； ['reverse', 'official']
+- `official_options`：OfficialOptions / null，可选；
+
+`OfficialOptions` 对象字段：
+- `n`：integer / null，可选；生成图片数量，1–10。
+- `background`：string / null，可选；
+- `output_format`：string / null，可选；
+- `output_compression`：integer / null，可选；
+- `mask`：string / null，可选；仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。
+- `input_fidelity`：string / null，可选；官转组兼容透传，模型是否支持以供应商为准。
+- `moderation`：string / null，可选；
+- `response_format`：string / null，可选；供应商兼容扩展；不代表官方 GPT Image 支持此字段。
+- `user`：string / null，可选；
+- `safety_identifier`：string / null，可选；
+- `stream`：boolean / null，可选；Images SSE；工具收集最终结果后返回。不能与异步提交合用。
+- `partial_images`：integer / null，可选；
+
+调用工具时的 arguments 示例（路径、URL 和任务 ID 替换为实际值）：
+
+```json
+{
+  "checkpointer": "product-detail-pages",
+  "thread_id": "blue-bag-sync-20261021",
+  "max_concurrency": 5,
   "tasks": [
     {
       "task_id": "page_01",
@@ -1087,7 +1157,7 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 |---|---|---|---|---|
 | `task_id` | string | 是 | `—` |   |
 | `timeout_seconds` | number | 否 | `60` |  minimum=1; maximum=300 |
-| `poll_interval` | number | 否 | `5` |  minimum=1; maximum=60 |
+| `poll_interval` | number | 否 | `90` |  minimum=1; maximum=300 |
 | `output_dir` | string / null | 否 | `null` | 可选绝对输出目录；默认配置目录。异步任务查询默认沿用提交目录。  |
 
 调用工具时的 arguments 示例（路径、URL 和任务 ID 替换为实际值）：
@@ -1095,8 +1165,8 @@ POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 tas
 ```json
 {
   "task_id": "替换为提交返回的真实任务ID",
-  "timeout_seconds": 60,
-  "poll_interval": 5
+  "timeout_seconds": 180,
+  "poll_interval": 90
 }
 ```
 
@@ -1227,15 +1297,15 @@ official_options: OfficialOptions | null = null
 ### 异步提交、等待、续查
 
 1. 调用 `submit_image_generation` 或 `submit_image_edit`，服务向 Images 路由添加 `?async=true`，立即保存返回的原始 `task_id`。异步提交同样计费。
-2. 调用 `wait_image_task`，默认等待 60 秒、间隔 5 秒；范围分别为 1–300 秒和 1–60 秒。或稍后用 `get_image_task` 只查一次。
+2. 调用 `wait_image_task`，默认等待 60 秒、间隔 90 秒；范围均为 1–300 秒。需要至少一次完整轮询间隔时将 timeout_seconds 设为 180 或以上。或稍后用 `get_image_task` 只查一次。
 3. `NOT_START` 为排队、`IN_PROGRESS` 为处理中，均继续查询；`FAILURE` 返回带 task_id 和脱敏原因的 MCP 工具错误；`SUCCESS` 且 `save=true` 时自动保存。成功状态不等于文件已落盘，要核对 `save_status`。
-4. `wait_timed_out=true` 只表示本次本地等待结束，保留 task_id 继续查；不会取消云端任务。关闭 Host 后没有独立后台轮询服务，云端可能继续运行，重新打开后续查原任务。
+4. `wait_timed_out=true` 只表示本次本地等待结束，保留 task_id 继续查；不会取消云端任务。MCP 服务存活时后台自动轮询；关闭 Host 后暂停，重启后从数据库恢复，无需重新提交。
 
 ```json
 {
   "task_id": "替换为原提交返回的真实任务ID",
-  "timeout_seconds": 60,
-  "poll_interval": 5
+  "timeout_seconds": 180,
+  "poll_interval": 90
 }
 ```
 
@@ -1243,9 +1313,9 @@ official_options: OfficialOptions | null = null
 
 只读 GET 遇到网络中断、超时或 HTTP 408/429/500/502/503/504，每轮最多尝试 3 次，间隔 1、2 秒；其他 HTTP 错误、未知状态或格式错误不自动重试。尝试与间隔受单轮请求及 `wait_image_task` 总预算约束。重试耗尽返回带 task_id 的脱敏工具错误，继续查询原任务；成功结果直接落盘，不额外再查一次。保存有独立下载时限，不保证整个工具耗时只等于轮询预算。
 
-### 批量异步：一轮工具调用提交最多 10 项
+### 批量同步与异步：一轮最多 20 项
 
-详情页多图规划使用 `submit_image_batch`，可以混合文生图和图像编辑。每项是独立的供应商异步任务；默认并发 3，`max_concurrency` 可设 1–10。工具等待这一轮的提交响应后返回，不等待上游成图，也不自动轮询或下载。上传参考图及等待提交确认仍需时间；不同批次的并发数可以叠加，没有账号全局配额控制。
+同步多图使用 `run_image_batch`，默认并发 5、可设 1–5，等待成图并校验落盘后返回。异步使用 `submit_image_batch`，默认并发 5、可设 1–20，收到提交确认即返回；后台每个任务每 90 秒查询一次并保存。两者均接受 1–20 项，支持混合生成和编辑。同一 MCP 进程跨单项与批量共享同步 5、异步提交 20 的并发上限；多个进程或账号间不共享提交配额，供应商实际容量需另验。
 
 身份的 format def：
 
@@ -1259,13 +1329,13 @@ provider_task_id: string | null  # 供应商返回的另一个编号，不能与
 
 `checkpointer` 是命名空间字符串，本版内部使用 SQLite，不需要安装 LangGraph 或传入 saver 对象。命名空间和会话键为 1–128 字符，首位字母/数字，其余可用字母、数字、下划线、点、冒号或连字符；`task_id` 仅用 1–128 个字母、数字、下划线或连字符。同一已授权任务的重试必须保留这三个键，不能每次随机生成新键。
 
-先规划稳定任务键，再一次调用 `submit_image_batch`。下面展示两项；同一数组可扩展至 10 项，`operation` 省略时为 `generate`。默认逆向，使用官转时在对应项显式写 `group="official"` 和 `official_options`。
+先规划稳定任务键，再一次调用 `submit_image_batch`。下面展示两项；同一数组可扩展至 20 项，`operation` 省略时为 `generate`。默认逆向，使用官转时在对应项显式写 `group="official"` 和 `official_options`。
 
 ```json
 {
   "checkpointer": "product-detail-pages",
   "thread_id": "blue-bag-20261020",
-  "max_concurrency": 3,
+  "max_concurrency": 5,
   "tasks": [
     {
       "task_id": "page_01",
@@ -1319,11 +1389,19 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 | NOT_START / IN_PROGRESS | 排队 / 生成中，继续查询 |
 | SUCCESS / FAILURE | 云端成功 / 失败；成功还须核对保存状态，失败不自动生成新任务 |
 
-整批先预检，最多 10 项、每线程最多 1000 条记录，参考图与 mask 合计最多 128 MiB；预检不产生收费 POST，但可能下载参考 URL 和探测输出目录。SQLite 在 POST 前原子记录提交权，同一项目的多个 MCP 进程也只能有一次提交尝试。供应商未给出幂等键契约，无法保证网络故障后“恰好一次成功”；本版保守保留不确定状态，可能冻结实际未发出的任务。若提交后的数据库写入失败，返回 warning，并尽量保留已知 provider_task_id，供 `get_image_task` 直接查询。
+整批先预检，最多 20 项、每线程最多 1000 条记录，参考图与 mask 合计最多 128 MiB；预检不产生收费 POST，但可能下载参考 URL 和探测输出目录。SQLite 在 POST 前原子记录提交权，同一项目的多个 MCP 进程也只能有一次提交尝试。供应商未给出幂等键契约，无法保证网络故障后“恰好一次成功”；本版保守保留不确定状态，可能冻结实际未发出的任务。若提交后的数据库写入失败，返回 warning，并尽量保留已知 provider_task_id，供 `get_image_task` 直接查询。
 
 数据库固定在实际项目的 `.runtime/checkpoints.sqlite3`，例如 `D:\MCP\zhenzhen-gptimagegen2.5-mcp\.runtime\checkpoints.sqlite3`，不随 Host 工作目录或输出目录变化。保存身份、请求指纹、分组、目录、状态、供应商编号和时间，不保存提示词、原图、mask 或 Key。默认不自动清理；更新需保留整个 `.runtime`，先停止所有使用该项目的 MCP 进程，再在私有位置备份整个目录。删除、恢复旧备份、重装到另一目录或换一组身份键都会失去相应防重历史；多机器之间没有分布式协调，不要借此自动重提。
 
-原有 `generate_image`、`edit_image`、`submit_image_generation`、`submit_image_edit` 保持原行为，没有这套提交防重保证。只有一项也可以使用 `submit_image_batch` 获得检查点保护。回滚旧版后保留新数据库，旧工具须凭 provider_task_id 查询，不要按逻辑任务键重新提交。开发契约和验收标识见 [异步批量方案](docs/ASYNC-BATCH-PLAN.md)。
+`generate_image`、`edit_image`、`submit_image_generation`、`submit_image_edit` 新增可选 `idempotency_key`（1–128 个字母/数字/下划线/连字符），映射到 `(single, default, idempotency_key)`，四个工具共用命名空间；与批量身份一样，相同参数复用、修改参数拒绝。同步结果清单持久化，重放验证文件存在及 SHA-256；哈希不匹配时报错，绝不重新收费。未提供键的单项保持原先无提交防重行为。只有一项也可使用批量入口获得保护。同步和异步模式不能共用同一任务身份。回滚旧版后保留新数据库，旧工具须凭 provider_task_id 查询，不要按逻辑任务键重新提交。开发契约和验收标识见 [异步批量方案](docs/ASYNC-BATCH-PLAN.md)。
+
+### 每 90 秒自动查询与数据库恢复
+
+后台轮询绑定 MCP 服务生命周期，单项/批量异步提交确认后登记 `(base_url, provider_task_id)`；首次查询在 90 秒后，每次查询完成后至少再等待 90 秒，调度扫描最多增加约 5 秒延迟。每轮最多 5 个并行查询，一次自动轮询只发一次 GET；网络错误或失败下载在下一轮重试，不执行收费 POST。FAILURE 或 SUCCESS 且全部文件已保存后停止；部分保存失败继续查询原编号并复用已保存文件。主动 `get_*`/`wait_*` 调用独立于自动频率，仍可有限重试。
+
+SQLite schema 1 自动迁移至 2，保留旧批量身份并登记已知供应商编号；旧版未登记到检查点的单项 JSON 元数据不自动导入，仍可凭原编号查询。WAL + FULL、短事务、5秒锁等待、到期索引和带随机令牌的事务租约协调多个进程；不在网络或下载期间占用写事务。服务中断后待租约到期恢复，默认最长约450秒（请求预算180秒+保存180秒+90秒余量）；正常运行不重查已完成保存的任务。不确定提交且无编号的记录保持冻结。
+
+数据库只新增轮询时间/次数、租约与本地结果清单（路径、字节数、SHA-256），不持久化原始响应/图像/提示词/URL/密钥。升级前停止所有 MCP 实例并备份整个 `.runtime`（包含可能存在的 WAL/SHM 文件）；schema2 不支持直接回滚旧服务读取，回滚需保留新数据库并凭供应商编号恢复。此本地负载无需额外数据库服务，无新收费或依赖；跨机器部署需另行设计。
 
 ### 下载与恢复
 
@@ -1337,11 +1415,11 @@ Agent 会话恢复或 Host 重启后，先调用 `get_image_batch`，免费读�
 
 | 边界 | 实际行为与操作要求 |
 |---|---|
-| 费用 / 幂等 | 生成、编辑及异步提交会产生费用；SDK `max_retries=0`。批量入口按稳定三元组持久化防重，不确定状态不自动重发；原有单项工具没有提交防重保证。保留检查点和供应商编号 |
+| 费用 / 幂等 | 生成、编辑及异步提交会产生费用；SDK `max_retries=0`。批量按稳定三元组、单项可选idempotency_key持久化防重；未传键的单项无防重保证。不确定状态不自动重发；保留检查点和供应商编号 |
 | 取消 | 没有云端取消工具；停止等待、关闭 Host 或 Ctrl+C 不保证云端任务取消或退款 |
 | 文件权限 | 输入可读取运行账号权限内的绝对文件，输出可指定绝对目录；当前无项目根沙箱或服务端目录白名单，不应向不可信远程用户开放该账号全部文件能力 |
 | 下载网络 | 拒绝非公开目标并逐跳验证重定向；校验真实图像类型/大小。下载专用客户端不带业务 Authorization、不继承系统代理；受限网络可能下载失败 |
-| 并发 / 限额 | 单次图片数量与字节数有界，未提供跨工具全局并发/速率配额；Host 和网关按账户与实际负载限制调用 |
+| 并发 / 限额 | 每批最多20项；进程内跨工具同步并发5、异步提交并发20，批量默认并发5；无跨进程/账号速率配额 |
 | 秘密 | `.env`、私有 Host 配置及备份明文保存在受限目录；不进入 Git/ZIP/日志。后端 Key 与网关令牌用途不同 |
 | 时间 | 请求默认 180 秒、可设 10–600 秒；wait 预算和 Host 超时分别设置。工具本地超时不等于云端失败 |
 | 外部内容 | 文件、图片和供应商返回内容只作数据，不作为 Agent 指令；实际编辑效果与文字准确性需看图验收 |
