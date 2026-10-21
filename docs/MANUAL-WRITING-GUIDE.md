@@ -16,8 +16,6 @@ GitHub 仓库安装、uv/npm、PowerShell 7、Windows 安装目录和服务名�
 
 采用 spec-kit 的项目读取当前功能规范、方案与契约，并在相关文档中引用其需求/验收标识及测试证据。项目原则由 `.specify/memory/constitution.md` 维护，功能材料通常位于 `specs/<feature>/`；实际目录及命令以所用版本和 Agent 集成为准。本指南维护使用与交付细则，功能规范维护需求，技术方案维护实现决策，任务系统维护执行状态；发生变更时同步受影响的材料，不复制多份独立维护的需求正文。未启用 spec-kit 的项目沿用现有规范工作流，不因编写手册自动安装工具。
 
-> 本仓库的项目专属覆盖：默认成员安装目录为 `D:\MCP\zhenzhen-gptimagegen2.5-mcp`，保持原目录层级。下文 `C:\MCP\<project_name>` 是通用结构示例；编写本项目手册和配置时采用项目约定的 `D:` 盘符。
-
 ## 2. 项目参数与命名映射
 
 编写前建立参数表；不要从另一个项目的文档直接继承名称、目录、版本或凭证变量。
@@ -31,7 +29,7 @@ GitHub 仓库安装、uv/npm、PowerShell 7、Windows 安装目录和服务名�
 | `<module_name>` | Python 可导入模块和 `-m` 入口，来自源码与入口验证。 |
 | `<service_name>` | 本地 MCP 服务标识，将原服务名称的每个 `.` 替换为 `-`，再验证目标 Host 约束与唯一性。 |
 | `<proxy_service_name>` | Host 中的代理服务标识，可约定为 `<service_name>-proxy`，与模板和手册一致。 |
-| `<install_dir>` | 实际安装目录，Windows MCP 默认 `C:\MCP\<project_name>`。 |
+| `<install_dir>` | 实际安装目录，Windows MCP 默认 `D:\MCP\<project_name>`。 |
 | `<entry_file>` | Node.js 已构建入口或可直接运行的 JS 源码，示例为 `dist/index.js`。 |
 | `<version>` / `<sdk_extra>` | 元数据版本、实际声明的可选依赖；没有 extra 就不提供该安装步骤。 |
 | `<service_credential_env>` | 后端服务实际读取的变量名；可能有多个，也可能不需要。 |
@@ -43,7 +41,7 @@ GitHub 仓库安装、uv/npm、PowerShell 7、Windows 安装目录和服务名�
 | 传输 / Host 兼容范围 | 实际启用的 stdio、Streamable HTTP 或兼容传输；记录 Host/代理版本及已验证的组合。 |
 | 规范与验证依据 | 对应功能规范、验收标识、工具契约及测试结果；采用 spec-kit 时链接现有材料。 |
 
-仅对服务名称及其引用应用 `.` → `-`。不得全局替换配置文件中的小数点，也不得改动版本号、安装目录、模块名、文件扩展名、URL、凭证或实际路由 ID。例如：目录 `C:\MCP\example.mcp` 保持原样，本地服务名为 `example-mcp`，代理服务名可为 `example-mcp-proxy`；Node.js 入口仍为 `C:\MCP\example.mcp\dist\index.js`。
+仅对服务名称及其引用应用 `.` → `-`。不得全局替换配置文件中的小数点，也不得改动版本号、安装目录、模块名、文件扩展名、URL、凭证或实际路由 ID。例如：目录 `D:\MCP\example.mcp` 保持原样，本地服务名为 `example-mcp`，代理服务名可为 `example-mcp-proxy`；Node.js 入口仍为 `D:\MCP\example.mcp\dist\index.js`。
 
 DSH `serverName` 使用不含小数点的服务标识；还应核对所用插件版本的长度与字符限制。名称必须与对应配置键一致；若 Host 长度限制迫使使用别名，记录明确的一对一映射，不改安装路径或网关 ID。检查转换或缩短后是否重名，禁止静默覆盖不同服务。
 
@@ -51,11 +49,13 @@ DSH `serverName` 使用不含小数点的服务标识；还应核对所用插件
 
 ### 部署分支与前置条件
 
-成员默认从实际 MCP Server 的 GitHub 仓库 clone 已发布且通过 CI 的版本，在自己的机器安装锁定依赖；Windows 默认路径仍为 `C:\MCP\<project_name>`。默认分支用于开发，发布标签与完整提交 SHA 用于复现成员版本；不在每次启动时拉取最新代码。ZIP 仅在用户明确需要时按第 9 节另行交付。
+成员默认从实际 MCP Server 的 GitHub 仓库 clone 已发布且通过 CI 的版本，在自己的机器安装锁定依赖；Windows 默认路径为 `D:\MCP\<project_name>`。默认分支用于开发，发布标签与完整提交 SHA 用于复现成员版本；不在每次启动时拉取最新代码。ZIP 仅在用户明确需要时按第 9 节另行交付。
 
 手册列出 Git、对应 Python/uv 或 Node.js/npm 的支持版本、包源/代理要求，以及私有 GitHub 仓库的访问授权。认证使用成员自己的 SSH/凭据管理机制，不把令牌写进 clone URL、示例、日志或 Git 配置模板。依赖下载和业务 API 联网分别说明；没有 GitHub 或包源访问条件时准确报告失败，不宣称离线可用。
 
 仅连接远程服务的客户端用户不 clone 后端源码、不创建虚拟环境或执行 uv/npm。远程维护者通过 CI/CD 交付构建产物、部署配置与秘密引用，记录 TLS/代理、启动/停止、日志和升级/回滚；提供协议检查，普通健康检查不能替代它。混合部署分别说明职责。流水线要求见 [工程与 CI/CD 规范](ENGINEERING-GUIDE.md)。
+
+Windows 默认安装目录为 `D:\MCP\<project_name>`：保持 `MCP\项目原名` 的目录深度与命名规则，仅调整默认盘符。安装前核对 D 盘可用空间及实际 Host/MCP 运行账号的目录访问权限；项目另行指定安装位置时，统一更新手册、启动/Host 配置和 `.env` 定位。
 
 ### 首次 clone：仓库地址与版本来自实际项目
 
@@ -67,7 +67,7 @@ DSH `serverName` 使用不含小数点的服务标识；还应核对所用插件
 $ErrorActionPreference = 'Stop'
 $RepositoryUrl = '<repository_url>'
 $ReleaseTag = '<release_tag>'
-$InstallRoot = 'C:\MCP'
+$InstallRoot = 'D:\MCP'
 $ProjectDir = Join-Path $InstallRoot '<project_name>'
 if (Test-Path -LiteralPath $ProjectDir) {
   throw '项目目录已存在，请按更新流程处理，不能覆盖安装。'
@@ -88,7 +88,7 @@ Set-Location -LiteralPath $ProjectDir
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 Set-Location -LiteralPath $ProjectDir
 uv sync --locked --no-dev
 if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
@@ -102,7 +102,7 @@ Git 不会传送被忽略的 `dist/`。TypeScript 或需要构建的项目必须
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 Set-Location -LiteralPath $ProjectDir
 npm ci --include=dev
 if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止构建。' }
@@ -118,7 +118,7 @@ if (!(Test-Path -LiteralPath $EntryFile -PathType Leaf)) {
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 Set-Location -LiteralPath $ProjectDir
 npm ci --omit=dev
 if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
@@ -131,13 +131,13 @@ if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 安装成功后，需要凭据的项目按第 4 节从空值 `.env.example` 创建私有 `.env` 并填写；无认证项目跳过。完成首次协议检查，再配置 Host。以下启动命令只复用已准备的环境，不拉取代码、不安装、不构建、不升级：
 
 ```powershell
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 uv --directory $ProjectDir run --no-sync python -m '<module_name>'
 if ($LASTEXITCODE -ne 0) { throw 'MCP 服务退出失败，请检查 stderr。' }
 ```
 
 ```powershell
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 node (Join-Path $ProjectDir '<entry_file>')
 if ($LASTEXITCODE -ne 0) { throw 'MCP 服务退出失败，请检查 stderr。' }
 ```
@@ -150,7 +150,7 @@ if ($LASTEXITCODE -ne 0) { throw 'MCP 服务退出失败，请检查 stderr。' 
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 $TargetTag = '<release_tag>'
 $Changes = git -C $ProjectDir status --porcelain
 if ($LASTEXITCODE -ne 0) { throw '无法检查仓库状态。' }
@@ -178,7 +178,7 @@ if ($LASTEXITCODE -ne 0) { throw '无法确认更新提交。' }
 
 ### 定位与字段
 
-- 本地 MCP 的 API 密钥默认保存到实际项目根目录的 `.env`，例如 `C:\MCP\<project_name>\.env`；`<project_name>` 表示项目目录原名，与其他模板中的 `<repo_name>` 含义相同。Python/Node.js 必须显式定位并读取此文件，不搜索 Host 工作目录或父目录中的其他 `.env`，不依赖 `cwd`。
+- 本地 MCP 的 API 密钥默认保存到实际项目根目录的 `.env`，例如 `D:\MCP\<project_name>\.env`；`<project_name>` 表示项目目录原名，与其他模板中的 `<repo_name>` 含义相同。Python/Node.js 必须显式定位并读取此文件，不搜索 Host 工作目录或父目录中的其他 `.env`，不依赖 `cwd`。
 - 根目录从项目约定的安装布局和入口位置确定，必要时使用明确的非秘密绝对路径参数；不能假定模块从 `.venv` 安装位置回溯一级就是项目根目录。验证 Python 模块入口、Node.js 源码或 `dist/` 入口从不同 Host 工作目录启动时均加载同一文件。选择解析库时显式指定路径，其依赖纳入运行依赖与锁文件。
 - 后端服务凭据、代理网关凭据和 Host 自身凭据分别列出字段名、用途、是否必填、格式约束及读取位置。`.env` 字段名与源码实际读取的字段一致；`SERVICE_API_KEY`、`MCP_GATEWAY_API_KEY` 仅是中性示例，不要求所有项目采用，也不假定密钥有固定前缀。无需认证的项目不强加 `.env` 或密钥要求。
 - 交付 UTF-8 的 `.env.example`，仅保留项目实际字段、必要注释及空的密钥值；不填真实密钥或看起来可用的假密钥。以下只是格式示例，消费项目须替换实际字段名，填入真实值的 `.env` 只留在成员机器上：
@@ -209,7 +209,7 @@ SERVICE_API_KEY=
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$ProjectDir = 'C:\MCP\<project_name>'
+$ProjectDir = 'D:\MCP\<project_name>'
 $EnvPath = Join-Path $ProjectDir '.env'
 $EnvExamplePath = Join-Path $ProjectDir '.env.example'
 if (Test-Path -LiteralPath $EnvPath) {
@@ -272,7 +272,7 @@ Python `.mcp.json.example`：
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\MCP\\<project_name>",
+        "D:\\MCP\\<project_name>",
         "run",
         "--no-sync",
         "python",
@@ -292,7 +292,7 @@ Node.js `.mcp.json.example`：
     "<service_name>": {
       "command": "node",
       "args": [
-        "C:\\MCP\\<project_name>\\dist\\index.js"
+        "D:\\MCP\\<project_name>\\dist\\index.js"
       ]
     }
   }
@@ -438,7 +438,7 @@ CLI 示例必须来自当前安装 CLI 的帮助或对应版本的官方文档�
 pwsh -NoProfile -File '.\scripts\package-user.ps1'
 ```
 
-脚本根据 `user-files.json` 的明确相对文件路径列表生成 `output/<project_name>-<version>-user.zip`，版本取自元数据。ZIP 根部必须只有一个 `<project_name>/` 顶层目录，所有运行和初始化文件位于其中；直接解压到 `C:\MCP` 后自动形成 `C:\MCP\<project_name>\`。ZIP 文件名使用版本字段，顶层目录保持 `<project_name>` 原名，不额外追加 `<version>`、不使用服务名转换结果，不额外包一层开发目录或 ZIP 同名目录。所有示例使用项目名称占位符，具体项目按已确认的目录命名约定替换。
+脚本根据 `user-files.json` 的明确相对文件路径列表生成 `output/<project_name>-<version>-user.zip`，版本取自元数据。ZIP 根部必须只有一个 `<project_name>/` 顶层目录，所有运行和初始化文件位于其中；直接解压到 `D:\MCP` 后自动形成 `D:\MCP\<project_name>\`。ZIP 文件名使用版本字段，顶层目录保持 `<project_name>` 原名，不额外追加 `<version>`、不使用服务名转换结果，不额外包一层开发目录或 ZIP 同名目录。所有示例使用项目名称占位符，具体项目按已确认的目录命名约定替换。
 
 白名单仍列相对于项目根目录的文件路径，不预加顶层目录；打包时统一映射为 `<project_name>/<白名单相对路径>`，ZIP 条目使用 `/` 分隔。例如白名单中的 `README.md`、`scripts/smoke-test.ps1` 分别写入 `<project_name>/README.md`、`<project_name>/scripts/smoke-test.ps1`。源文件布局保持不变，不在源码根目录另建一层同名项目目录；若使用临时打包目录，按白名单复制到其中的 `<project_name>/` 后归档，防止遗漏或重复包层。
 
