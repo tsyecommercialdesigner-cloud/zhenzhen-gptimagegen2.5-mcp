@@ -1,6 +1,8 @@
 # Zhenzhen Image MCP 交付与使用手册
 
-适用版本 **v0.3.1**。默认从 [项目 GitHub](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp) 的已发布版本安装到 D 盘。首次使用按第 1–4 节操作；已有安装按第 5 节更新。所有安装、编辑配置和业务示例都需用户自行按需执行，阅读本手册不会触发它们。
+适用版本 **v0.4.0**。默认从 [项目 GitHub](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp) 的已发布版本安装到 D 盘。首次使用按第 1–4 节操作；已有安装按第 5 节更新。所有安装、编辑配置和业务示例都需用户自行按需执行，阅读本手册不会触发它们。
+
+本版新增同步批量与自动轮询，升级会迁移本地数据库到 schema 2。升级前停止全部相关 MCP 进程，备份 `.env`、整个 `.runtime`（含 WAL/SHM）及图片；旧程序不能直接读取新库。历史五项真实同步请求的保存失败根因仍未确认，详见[发布与迁移说明](docs/RELEASE-v0.4.0.md)。
 
 ## 1. 环境准备
 
@@ -12,10 +14,10 @@
 |---|---|
 | 项目目录原名 | zhenzhen-gptimagegen2.5-mcp，用户约定 |
 | GitHub origin | https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git |
-| 已发布标签 | [v0.3.1](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases/tag/v0.3.1) |
-| 标签完整提交 | `f5011efcb0a9bd4353c106811d71645e02ff74fe` |
+| 发布安装目标 | [v0.4.0](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases/tag/v0.4.0)，公开后使用以下命令 |
+| 标签完整提交 | 固定 v0.4.0 的 `release-evidence.json` 中 `commit` 字段；安装前读取完整 40 位 SHA 并与标签核对 |
 | 默认安装 / 密钥文件 | `D:\MCP\zhenzhen-gptimagegen2.5-mcp` / 该目录 `.env` |
-| 发行包 / 版本 | `zhenzhen-image` / `0.3.1`，来自 pyproject.toml |
+| 发行包 / 版本 | `zhenzhen-image` / `0.4.0`，来自 pyproject.toml |
 | 模块与入口 | `zhenzhen_image_mcp` / `python -m zhenzhen_image_mcp` |
 | 本地服务名 | `zhenzhen-gptimagegen2-5-mcp` |
 | 通用消费代理服务名 | `zhenzhen-gptimagegen2-5-mcp-proxy` |
@@ -23,7 +25,7 @@
 | 供应商地址 / 后端密钥 | `https://ai.t8star.org/v1` / `ZHENZHEN_GPTIMAGEGEN_API_KEY` |
 | 可选网关令牌变量 | `CHERRYSTUDIO_API_GATEWAY_API_KEY`，原始令牌，不包含 `Bearer ` |
 
-仅服务名将点号换成连字符，安装目录保留 `2.5`；不要全局替换版本、模块、文件名或 URL。serverInfo.name 与本地服务名一致。主分支包含后续文档时，不将其 SHA 当作 v0.3.1 的发布 SHA。
+仅服务名将点号换成连字符，安装目录保留 `2.5`；不要全局替换版本、模块、文件名或 URL。serverInfo.name 与本地服务名一致。主分支包含后续改动时，不将其 SHA 当作 v0.4.0 的发布 SHA。发布准备阶段如果固定标签的证据附件尚未公开，安装命令会失败，应等待发布完成，不能改用浮动 main。
 
 ### 前置条件与验证范围
 
@@ -65,13 +67,16 @@
 
 ### 固定发布版本 clone 与锁定安装
 
-下例已填入真实仓库、v0.3.1 及完整 SHA。它只创建父目录，clone 自动创建项目目录；目标已存在则停止，请走第 5 节更新。发布依据见 Release 的 release-evidence.json：main CI 39544661935、发布流程 39544878036，另有该标签全新安装验收。仓库不使用必须额外初始化的 submodule/LFS 运行文件。
+下例固定实际仓库与 v0.4.0，从该版本的 release-evidence.json 读取完整发布 SHA，再与 clone 的提交核对；附件同时记录目标 main CI、发布流程和全新安装验收。标签与附件未公开时停止，不跳过校验。它只创建父目录，clone 自动创建项目目录；目标已存在则走第 5 节。仓库不使用必须额外初始化的 submodule/LFS 运行文件。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $RepositoryUrl = 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git'
-$ReleaseTag = 'v0.3.1'
-$ExpectedSha = 'f5011efcb0a9bd4353c106811d71645e02ff74fe'
+$ReleaseTag = 'v0.4.0'
+$ReleaseEvidence = Invoke-RestMethod -Uri "https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases/download/$ReleaseTag/release-evidence.json" -ErrorAction Stop
+if ($ReleaseEvidence -is [string]) { $ReleaseEvidence = $ReleaseEvidence | ConvertFrom-Json -ErrorAction Stop }
+if ($ReleaseEvidence.tag -ne $ReleaseTag -or $ReleaseEvidence.version -ne '0.4.0' -or $ReleaseEvidence.commit -notmatch '^[a-f0-9]{40}$') { throw '发布证据无效，停止安装。' }
+$ExpectedSha = $ReleaseEvidence.commit
 $InstallRoot = 'D:\MCP'
 $ProjectDir = Join-Path $InstallRoot 'zhenzhen-gptimagegen2.5-mcp'
 if (Test-Path -LiteralPath $ProjectDir) { throw '目录已存在，请按更新流程处理。' }
@@ -135,7 +140,7 @@ pwsh -NoProfile -File 'D:\MCP\zhenzhen-gptimagegen2.5-mcp\scripts\smoke-test.ps1
 if ($LASTEXITCODE -ne 0) { throw '协议检查失败，请先排障。' }
 ```
 
-当前开发代码成功退出码 0，输出含 passed=true、transport=stdio、tools=12、prompts=1、resources=1、paid_calls=0；已发布 v0.3.1 为 11 个工具。它在不同工作目录下启动实际子进程，检查 legacy 初始化、发现、资源/提示访问、免费指南及非法模型在联网前拒绝；失败非零并返回脱敏诊断。缺少 Key 不妨碍发现，key_present=true 也不证明供应商鉴权成功。
+v0.4.0 成功退出码 0，输出含 passed=true、transport=stdio、tools=12、prompts=1、resources=1、paid_calls=0；历史 v0.3.1 为 11 个工具。它在不同工作目录下启动实际子进程，检查 legacy 初始化、发现、资源/提示访问、免费指南及非法模型在联网前拒绝；失败非零并返回脱敏诊断。缺少 Key 不妨碍发现，key_present=true 也不证明供应商鉴权成功。
 
 代理维护者可在当前 shell 输入网关原始令牌后运行完整能力检查；本脚本需要本地后端运行环境，仅连接远端的用户直接在自己的 Host 检查工具与免费指南即可：
 
@@ -163,7 +168,7 @@ if ($LASTEXITCODE -ne 0) { throw '代理协议检查失败。' }
 
 ## 4. 客户端配置
 
-同一 Agent 会话选择直接 stdio 或消费代理，避免同一后端重复启用。添加后都要保存、启用、发现当前开发版 12 个工具（v0.3.1 为 11 个）、绑定目标助手/Agent、按需授权工具，再免费调用 get_model_guide。真正绘图需要另行明确授权。
+同一 Agent 会话选择直接 stdio 或消费代理，避免同一后端重复启用。添加后都要保存、启用、发现 v0.4.0 的 12 个工具（历史 v0.3.1 为 11 个）、绑定目标助手/Agent、按需授权工具，再免费调用 get_model_guide。真正绘图需要另行明确授权。
 
 | 六项覆盖 | 本项目说明 |
 |---|---|
@@ -237,7 +242,7 @@ foreach ($Name in $Names) {
 ### Cherry Studio：后端与消费代理的操作
 
 1. 在设置的 MCP 服务器入口新增 stdio，名称与 command/逐行 args 按本地模板；支持相应 JSON 导入时导入模板，无 cwd、无业务 Key env。界面命名因版本而异，本轮未重测 GUI。
-2. 保存、启用并检查开发版 12 个工具（v0.3.1 为 11 个）；在目标助手/Agent 中选择此服务，调用 get_model_guide，必要时修复项目 .env 后重启实际 MCP。
+2. 保存、启用并检查 v0.4.0 的 12 个工具（v0.3.1 为 11 个）；在目标助手/Agent 中选择此服务，调用 get_model_guide，必要时修复项目 .env 后重启实际 MCP。
 3. 需要代理才在兼容版本启用 API Gateway/MCP Proxy，记录实际 URL、路由 ID、原始网关令牌。先完成后端验收，再连接代理。
 4. 消费 Host 选择 HTTP/Streamable HTTP，填实际 URL 和该 Host 支持的私有认证；保存、启用、绑定助手并发现工具，调用免费指南。仅开启网关不能代替消费 Host 配置；只消费远端的人不安装后端。
 
@@ -292,7 +297,7 @@ Remove-Variable GatewayKey
 codex
 ```
 
-保存后重启/重新加载该 MCP，检查启用状态、开发版 12 个工具与权限，调用 get_model_guide。Codex 不自动将模板 .mcp.json 当作 TOML 配置。
+保存后重启/重新加载该 MCP，检查启用状态、v0.4.0 的 12 个工具与权限，调用 get_model_guide。Codex 不自动将模板 .mcp.json 当作 TOML 配置。
 
 **环境兼容例外：**默认后端自己读取 .env；仅文件未定义 Key 时，需要转发父进程环境可在同一个 stdio 表内追加下面字段。不要另建重复实例，不将空 .env 当作缺失：
 
@@ -455,7 +460,7 @@ foreach ($PatchFile in $PatchFiles) {
 2. 同一目标实例已存在时就地合并，不能重复追加。id 是不冲突的实例 ID，name 是包名，serverName 是命名空间，需匹配 `[A-Za-z0-9_-]{1,32}`。DSH 用 29 字符代理别名，不照搬超过上限的通用代理全名。不要编辑共享 bundle。
 3. stdio 先完成后端安装和 .env；HTTP 先完成网关与真实路由 ID 替换，并按前文掩码输入设置启动客户端父进程的网关令牌。DSH 的 `streamable-http` 不等于通用 JSON 的 `streamableHTTP`。`!!js` 由 DSH 解释，普通 YAML 不执行或自动插值；本地静态验证不求值真实凭据。
 4. 保存每份实际使用的 profile。原生 DSH 从设置好环境的 shell 执行 `dsh --profile web`；App 完全退出后重启并确认加载 desktop；Multica 在其实际管理入口激活 multica 或重启关联 DSH。后两者界面/运行时未在本轮联调，不能用启动 npm web 的结果替代。
-5. 检查插件加载日志，发现开发版 12 个工具且无 create_response。在目标 Agent 预设中启用/允许工具，调用免费 get_model_guide；以实际发现的命名空间为准。Tools 可用不证明 Prompt/Resource 已桥接，600000 毫秒是 Host 等待设置，不取消云端任务。
+5. 检查插件加载日志，发现 v0.4.0 的 12 个工具且无 create_response。在目标 Agent 预设中启用/允许工具，调用免费 get_model_guide；以实际发现的命名空间为准。Tools 可用不证明 Prompt/Resource 已桥接，600000 毫秒是 Host 等待设置，不取消云端任务。
 
 profile 备份含私有配置，只留本机并限制访问，不提交/打包。本手册不提供会重写现有 YAML 的自动拼接命令。额外 `--patch` 仅叠加到一次启动，不能与持久 profile 重复加载同一实例。
 
@@ -664,13 +669,16 @@ stdio 等待协议输入时没有欢迎输出正常；手工启动可 Ctrl+C 退
 
 更新前停止所有使用此安装的 MCP 子进程，记录当前 SHA，私下备份 `.env`（含 ACL）、整个 `.runtime`、输出目录的 `.tasks` 元数据与图片。不能在 SQLite 活动时复制；升级不覆盖 `.env`，新增字段手工合并，不能删除任务库重置防重。只有 ZIP 的旧安装先迁移到独立 clone，不直接覆盖旧目录或复用移动后的 .venv。
 
-以下固定更新目标为已发布 v0.3.1。将来选择新版本时，必须同时从其实际 Release 更新标签及完整 SHA，不能改为浮动 main。命令只允许干净 Git 安装，拒绝覆盖已忽略文件，不自动 stash/reset/clean：
+以下固定更新目标为 v0.4.0；发布证据附件公开后才能执行。将来选择新版本时，必须同时从其实际 Release 更新标签及完整 SHA，不能改为浮动 main。命令只允许干净 Git 安装，拒绝覆盖已忽略文件，不自动 stash/reset/clean：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $ProjectDir = 'D:\MCP\zhenzhen-gptimagegen2.5-mcp'
-$TargetTag = 'v0.3.1'
-$ExpectedSha = 'f5011efcb0a9bd4353c106811d71645e02ff74fe'
+$TargetTag = 'v0.4.0'
+$ReleaseEvidence = Invoke-RestMethod -Uri "https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/releases/download/$TargetTag/release-evidence.json" -ErrorAction Stop
+if ($ReleaseEvidence -is [string]) { $ReleaseEvidence = $ReleaseEvidence | ConvertFrom-Json -ErrorAction Stop }
+if ($ReleaseEvidence.tag -ne $TargetTag -or $ReleaseEvidence.version -ne '0.4.0' -or $ReleaseEvidence.commit -notmatch '^[a-f0-9]{40}$') { throw '发布证据无效，停止安装。' }
+$ExpectedSha = $ReleaseEvidence.commit
 $RepositoryUrl = 'https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp.git'
 $ActualOrigin = git -C $ProjectDir remote get-url origin
 if ($LASTEXITCODE -ne 0 -or $ActualOrigin -ne $RepositoryUrl) { throw 'origin 不符，请核对实际仓库后停止。' }
@@ -756,7 +764,7 @@ pwsh -NoProfile -File '.\scripts\package-user.ps1'
 if ($LASTEXITCODE -ne 0) { throw '打包/独立安装验证失败。' }
 ```
 
-仅验证、不保留 ZIP 时使用 `pwsh -NoProfile -File '.\scripts\package-user.ps1' -VerifyOnly`。脚本先构建，检查白名单和秘密禁入，再独立临时目录、空缓存在线锁定安装与协议验证；不在日常启动中执行。输出 `output/zhenzhen-gptimagegen2.5-mcp-0.3.1-user.zip`，唯一顶层为 `zhenzhen-gptimagegen2.5-mcp/`，拒绝覆盖同名包。测试/开发规范不入成员 ZIP，但仍保留在 Git。
+仅验证、不保留 ZIP 时使用 `pwsh -NoProfile -File '.\scripts\package-user.ps1' -VerifyOnly`。脚本先构建，检查白名单和秘密禁入，再独立临时目录、空缓存在线锁定安装与协议验证；不在日常启动中执行。输出 `output/zhenzhen-gptimagegen2.5-mcp-0.4.0-user.zip`，唯一顶层为 `zhenzhen-gptimagegen2.5-mcp/`，拒绝覆盖同名包。测试/开发规范不入成员 ZIP，但仍保留在 Git。
 
 收到明确的已验包并核对维护者校验摘要后，按提示输入 ZIP 文件路径，解压到父目录，不预建项目目录：
 
@@ -1439,7 +1447,7 @@ SQLite schema 1 自动迁移至 2，保留旧批量身份并登记已知供应�
 | `uv/pwsh/python` 找不到 | 检查 PATH 和实际运行账号；安装符合第 1 节版本的工具，重启 Host 使其继承 PATH。Python 3.12 下载需要网络 |
 | `uv sync --locked` 失败 | 检查 Python、源、网络/代理、证书和缓存权限。锁与元数据不一致由开发者修复，不删除锁或加 `--upgrade` |
 | `No module named zhenzhen_image_mcp` | 核对安装目录、`src/`、元数据、初始化退出码和 `--directory`；成员不复用开发机 `.venv` |
-| 解压后多套一层目录 | 默认 clone 自动生成项目目录；0.3.1 可选 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
+| 解压后多套一层目录 | 默认 clone 自动生成项目目录；0.4.0 可选 ZIP 自带项目顶层目录，直接解压到父目录，不再按带版本 ZIP 文件名套目录 |
 | 握手过了但绘图报缺少 Key | 协议检查不认证供应商；检查实际项目 `.env` 字段、运行账号和 ACL，调用指南看 `key_present` |
 | `.env` 空值 / 格式 / 重复 / 编码错误 | 填实际 Key、保留唯一字段、保存 UTF-8；错误必须修复，不能靠环境旧值掩盖 |
 | `.env` 不可读 | 按实际服务账号核对文件与目录 ACL；不要提升整个 Host 为管理员或给 Everyone 读取 |
