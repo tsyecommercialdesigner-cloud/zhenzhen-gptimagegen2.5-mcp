@@ -1,5 +1,30 @@
 # 验证记录
 
+## 2026-10-22：v0.4.0 Flare 单项异步文生图真实验收
+
+用户明确授权在当前 Codex 会话提交 1 个 Flare 异步任务，提示词为“蓝色抽绳垃圾袋”，验证提交、查询和图片自动落盘，失败不自动重试。本次使用 D 盘安装的 v0.4.0（提交 `b4e845438ffc1dff9e9b79c7d7fb56ae130d8922`），声明分组 `reverse`；未指定 size、quality 或官转扩展参数。
+
+| 环节 | 实际结果 |
+|---|---|
+| 本地预检 | 当前会话 `get_model_guide` 返回密钥存在、默认 reverse，包含 `gpt-image-2.5-flare`。不输出真实密钥。 |
+| 异步提交 | 调用 1 次 `submit_image_generation`，传稳定 `idempotency_key`；返回 `SUBMITTED`、`reused=false`、`auto_poll_interval=90`。 |
+| 供应商任务 ID | `fc055fe3f67d4dbd9376497f60898c03` |
+| 查询与保存 | 对该编号调用 `get_image_task(save=true)`；返回 `SUCCESS`、进度 `100%`、`save_status=saved`、`download_errors=[]`，保存 1 张图片，文件 `reused=false`。 |
+| 本地复核 | 使用 Pillow 解码/校验 PNG，并独立读取磁盘文件计算 SHA-256；与 MCP 返回的字节数及摘要一致。 |
+
+图片校验结果：
+
+- 输出目录：`%USERPROFILE%\Pictures\ZhenzhenImage`，沿用配置默认值。
+- 文件名：`image-24b505222fa809e18b9654c37297cb3f22f62d11f27ee8c2ba455c9670aeba34.png`。
+- 格式/尺寸：PNG，1254 × 1254；本次未指定 size，不将该尺寸记录为请求尺寸偏差。
+- 大小：1,634,557 字节。
+- SHA-256：`24b505222fa809e18b9654c37297cb3f22f62d11f27ee8c2ba455c9670aeba34`。
+- 实图检查：可见白底蓝色抽绳垃圾袋及一卷蓝色垃圾袋；不据此推断模型整体质量或速度。
+
+**结论：当前 Codex → 本机 v0.4.0 → Flare 逆向异步提交 → 同一任务查询 → 自动保存 → 磁盘图片校验的单项链路通过。** 本轮只调用一次提交工具，没有重提、换键或切换分组。自动保存由此次 `save=true` 查询触发；返回 90 秒自动轮询配置不等于已独立验证后台定时器，无人工查询的后台保存及重启恢复不在本次验收范围内。
+
+此结果不能替代 Sunburst、图像编辑、官转参数、多项并发或其他 Host 的收费链路验证，也不追溯解决历史五项下载失败的未知根因。上述收费调用已在前一轮授权完成；本次补写文档仅复核既有本地图片，没有新增收费调用。未修改代码、Host 配置、D 盘安装或既有任务数据，未提交、推送或发布 Release。真实密钥、供应商图片 URL、原始响应及图片文件不纳入此文档。
+
 ## 2026-10-22：隔离升级迁移与故障恢复（提交前本地验证）
 
 - PR #9 以 `8bcaf24505f2667d66d7f27358e2548e547421cc` 合入 main；最新 PR、dev push 与合入 main 的 Windows CI 均通过，合入运行见 [39700220824](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/actions/runs/39700220824)。
