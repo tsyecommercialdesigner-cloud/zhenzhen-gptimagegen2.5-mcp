@@ -1,5 +1,12 @@
 # 验证记录
 
+## 2026-10-22：隔离升级迁移与故障恢复（提交前本地验证）
+
+- PR #9 以 `8bcaf24505f2667d66d7f27358e2548e547421cc` 合入 main；最新 PR、dev push 与合入 main 的 Windows CI 均通过，合入运行见 [39700220824](https://github.com/tsyecommercialdesigner-cloud/zhenzhen-gptimagegen2.5-mcp/actions/runs/39700220824)。
+- 在独立本地分支补充 `tests/test_migration.py` 的 3 项验证：构造 v1 库的备份/升级/服务对象重建后的查询恢复；迁移事务中途 SQL 错误回滚；独立子进程在 ALTER TABLE 后硬退出，再打开时恢复旧库并安全迁移。已知供应商编号、指纹和未知提交状态均保留，没有重复登记或模拟 POST。
+- 本地 `scripts/check.py` 通过：115 项测试、格式/lint/类型/秘密/文档检查，以及 12 Tools / 1 Prompt / 1 Resource 的 stdio 发现；paid_calls=0。上述结果在提交前取得；本次交付的 PR、精确提交及合入后 CI 另以 GitHub 记录核对，不将本地结果冒称远端 CI 已覆盖。
+- 未操作真实 Host，未复制或迁移 D 盘数据库，未修改 D 盘安装及任务数据，也未调用收费接口或发布 Release。schema2 的旧程序回滚限制和历史五项保存失败仍按既有记录处理。
+
 ## 2026-10-22：PR #9 本地评审与下载诊断修复
 
 - 评审发现 `result_manifest` 丢弃下载错误，导致同步批量、幂等重放和后台轮询快照缺乏失败原因。新增协议回归先复现该缺陷，再保留脱敏 `download_errors`：仅包含索引、null URL 和脱敏错误，不写入上游图片 URL、提示词或密钥。
