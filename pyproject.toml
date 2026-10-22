@@ -1,6 +1,6 @@
 [project]
 name = "zhenzhen-image"
-version = "0.3.1"
+version = "0.4.0"
 description = "Stdio MCP for Zhenzhen GPT Image generation, editing and asynchronous tasks"
 readme = "README.md"
 license = "MIT"
