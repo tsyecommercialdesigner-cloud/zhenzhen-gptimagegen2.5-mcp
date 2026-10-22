@@ -62,7 +62,7 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
         mock.start()
         self.addCleanup(mock.stop)
 
-    async def test_ten_tasks_one_tool_call_bounded_parallel_posts_no_generation_wait(self):
+    async def test_twenty_tasks_one_tool_call_bounded_parallel_posts_no_generation_wait(self):
         active = peak = 0
         gate = asyncio.Event()
         reached = asyncio.Event()
@@ -72,7 +72,7 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.requests.append(request)
             active += 1
             peak = max(peak, active)
-            if active == 3:
+            if active == 5:
                 reached.set()
             await gate.wait()
             active -= 1
@@ -80,26 +80,26 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
             return httpx2.Response(200, json={"code": "success", "data": f"provider_{index}"})
 
         self.install_handler(handler)
-        pending = asyncio.create_task(self.submit(10))
+        pending = asyncio.create_task(self.submit(20))
         try:
             await asyncio.wait_for(reached.wait(), 10)
-            self.assertEqual(len(self.requests), 3)
+            self.assertEqual(len(self.requests), 5)
             # The checkpoint read can run while the batch's POSTs are awaiting acknowledgements.
             snapshot = await self.call(
                 "get_image_batch", {"checkpointer": "detail-pages", "thread_id": "product-001"}
             )
             self.assertFalse(snapshot.is_error)
-            self.assertEqual(len(snapshot.structured_content["tasks"]), 10)
+            self.assertEqual(len(snapshot.structured_content["tasks"]), 20)
         finally:
             gate.set()
         result = await pending
         self.assertFalse(result.is_error)
         self.assertEqual(result.structured_content["status"], "ACCEPTED")
         self.assertEqual(
-            [t["task_id"] for t in result.structured_content["tasks"]], [f"page_{i}" for i in range(10)]
+            [t["task_id"] for t in result.structured_content["tasks"]], [f"page_{i}" for i in range(20)]
         )
-        self.assertEqual(peak, 3)
-        self.assertEqual(len(self.requests), 10)
+        self.assertEqual(peak, 5)
+        self.assertEqual(len(self.requests), 20)
         self.assertTrue(all(r.method == "POST" and r.url.query == b"async=true" for r in self.requests))
         self.assertTrue(all(set(json.loads(r.content)) == {"prompt", "model"} for r in self.requests))
         self.assertFalse(list(self.root.glob("*.png")))
@@ -113,7 +113,7 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
 
         self.install_handler(handler)
         results = await asyncio.gather(self.submit(3), self.submit(3))
-        self.assertTrue(all(not result.is_error for result in results))
+        self.assertTrue(all(not result.is_error for result in results), [r.content for r in results])
         self.assertEqual(len(self.requests), 3)
         # Every tool call constructs a new service/store, as after an MCP restart.
         replay = await self.submit(3, max_concurrency=1)
@@ -148,14 +148,14 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
         cases = []
         for override in (
             {"max_concurrency": 0},
-            {"max_concurrency": 11},
+            {"max_concurrency": 21},
             {"max_concurrency": "3"},
             {"checkpointer": "../escape"},
             {"thread_id": ""},
             {"unknown": True},
         ):
             cases.append(self.arguments(**override))
-        cases.extend([self.arguments(0), self.arguments(11)])
+        cases.extend([self.arguments(0), self.arguments(21)])
         duplicate = self.arguments(2)
         duplicate["tasks"][1]["task_id"] = "page_0"
         cases.append(duplicate)
@@ -399,7 +399,7 @@ class BatchProtocolTests(unittest.IsolatedAsyncioTestCase):
         by_name = {t.name: t for t in tools}
         batch = by_name["submit_image_batch"]
         self.assertTrue(batch.annotations.idempotent_hint)
-        self.assertEqual(batch.input_schema["properties"]["tasks"]["maxItems"], 10)
+        self.assertEqual(batch.input_schema["properties"]["tasks"]["maxItems"], 20)
         self.sequence = [(200, {"data": "provider_0"})]
         result = await self.submit()
         Draft202012Validator(batch.output_schema).validate(result.structured_content)

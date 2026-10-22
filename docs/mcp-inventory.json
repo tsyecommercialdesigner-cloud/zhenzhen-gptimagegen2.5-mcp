@@ -184,6 +184,20 @@
             ],
             "default": null,
             "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。",
+            "title": "Idempotency Key"
           }
         },
         "required": [
@@ -423,6 +437,18 @@
           "warning": {
             "title": "Warning",
             "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
           },
           "note": {
             "title": "Note",
@@ -692,6 +718,20 @@
             ],
             "default": null,
             "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。",
+            "title": "Idempotency Key"
           }
         },
         "required": [
@@ -933,6 +973,18 @@
             "title": "Warning",
             "type": "string"
           },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
+          },
           "note": {
             "title": "Note",
             "type": "string"
@@ -1107,7 +1159,7 @@
     {
       "name": "submit_image_generation",
       "title": null,
-      "description": "POST generations?async=true 提交收费异步绘图，立即返回 task_id。必须继续查询才能自动落盘。",
+      "description": "提交收费异步绘图并返回 task_id；服务存活时每90秒自动查询并落盘。可选 idempotency_key 防重。",
       "inputSchema": {
         "properties": {
           "prompt": {
@@ -1209,6 +1261,20 @@
             ],
             "default": null,
             "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。",
+            "title": "Idempotency Key"
           }
         },
         "required": [
@@ -1449,6 +1515,18 @@
             "title": "Warning",
             "type": "string"
           },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
+          },
           "note": {
             "title": "Note",
             "type": "string"
@@ -1623,7 +1701,7 @@
     {
       "name": "submit_image_edit",
       "title": null,
-      "description": "POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 task_id，之后查询并落盘。",
+      "description": "提交收费异步编辑，以 image[] 上传；每90秒自动查询并落盘。可选 idempotency_key 防重。",
       "inputSchema": {
         "properties": {
           "prompt": {
@@ -1717,6 +1795,20 @@
             ],
             "default": null,
             "description": "仅 group=\"official\" 可用的官转扩展参数。未声明官转时传入此对象会在收费前拒绝。"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。",
+            "title": "Idempotency Key"
           }
         },
         "required": [
@@ -1958,6 +2050,18 @@
             "title": "Warning",
             "type": "string"
           },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
+          },
           "note": {
             "title": "Note",
             "type": "string"
@@ -2132,7 +2236,7 @@
     {
       "name": "submit_image_batch",
       "title": null,
-      "description": "一次并发提交1–10项收费异步生成/编辑，默认并发3。收到任务编号即返回，不等待成图。同一(checkpointer,thread_id,task_id)及参数复用记录，参数冲突在提交前拒绝；不确定提交永不自动重发。",
+      "description": "一次提交1–20项收费异步生成/编辑，默认并发5、最多20。收到编号即返回，后台每90秒查询并落盘。同一(checkpointer,thread_id,task_id)及参数复用，冲突拒绝；不确定提交永不自动重发。",
       "inputSchema": {
         "properties": {
           "checkpointer": {
@@ -2151,14 +2255,14 @@
             "items": {
               "$ref": "#/$defs/BatchImageTask"
             },
-            "maxItems": 10,
+            "maxItems": 20,
             "minItems": 1,
             "title": "Tasks",
             "type": "array"
           },
           "max_concurrency": {
-            "default": 3,
-            "maximum": 10,
+            "default": 5,
+            "maximum": 20,
             "minimum": 1,
             "title": "Max Concurrency",
             "type": "integer"
@@ -2502,7 +2606,8 @@
             "enum": [
               "ACCEPTED",
               "ATTENTION_REQUIRED",
-              "SNAPSHOT"
+              "SNAPSHOT",
+              "COMPLETED"
             ],
             "title": "Status",
             "type": "string"
@@ -2670,6 +2775,715 @@
               "warning": {
                 "title": "Warning",
                 "type": "string"
+              },
+              "idempotency_key": {
+                "title": "Idempotency Key",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "auto_poll_interval": {
+                "title": "Auto Poll Interval",
+                "type": "integer"
+              },
+              "note": {
+                "title": "Note",
+                "type": "string"
+              },
+              "progress": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Progress"
+              },
+              "fail_reason": {
+                "title": "Fail Reason",
+                "type": "string"
+              },
+              "wait_timed_out": {
+                "title": "Wait Timed Out",
+                "type": "boolean"
+              },
+              "response": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Response"
+              },
+              "files": {
+                "items": {
+                  "$ref": "#/$defs/SavedFile"
+                },
+                "title": "Files",
+                "type": "array"
+              },
+              "download_errors": {
+                "items": {
+                  "$ref": "#/$defs/DownloadError"
+                },
+                "title": "Download Errors",
+                "type": "array"
+              },
+              "save_status": {
+                "enum": [
+                  "saved",
+                  "partial",
+                  "failed",
+                  "no_images"
+                ],
+                "title": "Save Status",
+                "type": "string"
+              },
+              "usage": {
+                "additionalProperties": true,
+                "title": "Usage",
+                "type": "object"
+              },
+              "cost": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cost"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "title": "ImageResult",
+            "type": "object"
+          },
+          "SavedFile": {
+            "properties": {
+              "path": {
+                "title": "Path",
+                "type": "string"
+              },
+              "mime_type": {
+                "title": "Mime Type",
+                "type": "string"
+              },
+              "bytes": {
+                "title": "Bytes",
+                "type": "integer"
+              },
+              "sha256": {
+                "title": "Sha256",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "mime_type",
+              "bytes",
+              "sha256",
+              "reused",
+              "index"
+            ],
+            "title": "SavedFile",
+            "type": "object"
+          }
+        },
+        "title": "BatchResult"
+      },
+      "icons": null,
+      "annotations": {
+        "title": null,
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": null
+    },
+    {
+      "name": "run_image_batch",
+      "title": null,
+      "description": "同步执行1–20项收费生成/编辑，默认并发5，完成并校验落盘后返回。稳定三元组防重；重放验证文件SHA-256，不重复收费；超时/未知结果禁止重发。",
+      "inputSchema": {
+        "properties": {
+          "checkpointer": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "description": "稳定的本地检查点命名空间/会话键，1–128字符。",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/$defs/BatchImageTask"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "max_concurrency": {
+            "default": 5,
+            "maximum": 5,
+            "minimum": 1,
+            "title": "Max Concurrency",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "tasks"
+        ],
+        "type": "object",
+        "$defs": {
+          "BatchImageTask": {
+            "additionalProperties": false,
+            "description": "One stable caller-assigned task identity inside a checkpoint thread.",
+            "properties": {
+              "task_id": {
+                "description": "Agent 指定的稳定任务键；重试不能改名。",
+                "pattern": "^[A-Za-z0-9_-]{1,128}$",
+                "title": "Task Id",
+                "type": "string"
+              },
+              "operation": {
+                "default": "generate",
+                "enum": [
+                  "generate",
+                  "edit"
+                ],
+                "title": "Operation",
+                "type": "string"
+              },
+              "prompt": {
+                "maxLength": 32000,
+                "minLength": 1,
+                "title": "Prompt",
+                "type": "string"
+              },
+              "model": {
+                "enum": [
+                  "gpt-image-2.5-flare",
+                  "gpt-image-2.5-sunburst"
+                ],
+                "title": "Model",
+                "type": "string"
+              },
+              "images": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 16,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Images"
+              },
+              "size": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Size"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh",
+                      "max"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality"
+              },
+              "output_dir": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Dir"
+              },
+              "group": {
+                "default": "reverse",
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "official_options": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/OfficialOptions"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              }
+            },
+            "required": [
+              "task_id",
+              "prompt",
+              "model"
+            ],
+            "title": "BatchImageTask",
+            "type": "object"
+          },
+          "OfficialOptions": {
+            "additionalProperties": false,
+            "description": "Optional official-group fields; unknown fields never reach the provider.",
+            "properties": {
+              "n": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "生成图片数量，1–10。",
+                "title": "N"
+              },
+              "background": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "transparent",
+                      "opaque"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Background"
+              },
+              "output_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "png",
+                      "jpeg",
+                      "webp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Format"
+              },
+              "output_compression": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Output Compression"
+              },
+              "mask": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "仅编辑：本机绝对路径/公开 URL/data URL，PNG，<4 MiB，与首张图同尺寸。",
+                "title": "Mask"
+              },
+              "input_fidelity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "high",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "官转组兼容透传，模型是否支持以供应商为准。",
+                "title": "Input Fidelity"
+              },
+              "moderation": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "auto",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Moderation"
+              },
+              "response_format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "url",
+                      "b64_json"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "供应商兼容扩展；不代表官方 GPT Image 支持此字段。",
+                "title": "Response Format"
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "User"
+              },
+              "safety_identifier": {
+                "anyOf": [
+                  {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Safety Identifier"
+              },
+              "stream": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Images SSE；工具收集最终结果后返回。不能与异步提交合用。",
+                "title": "Stream"
+              },
+              "partial_images": {
+                "anyOf": [
+                  {
+                    "maximum": 3,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Partial Images"
+              }
+            },
+            "title": "OfficialOptions",
+            "type": "object"
+          }
+        },
+        "title": "run_image_batchArguments",
+        "additionalProperties": false
+      },
+      "execution": null,
+      "outputSchema": {
+        "properties": {
+          "checkpointer": {
+            "title": "Checkpointer",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACCEPTED",
+              "ATTENTION_REQUIRED",
+              "SNAPSHOT",
+              "COMPLETED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/$defs/CheckpointTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "next_tool": {
+            "title": "Next Tool",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpointer",
+          "thread_id",
+          "status",
+          "tasks",
+          "next_tool",
+          "note"
+        ],
+        "type": "object",
+        "$defs": {
+          "CheckpointTask": {
+            "properties": {
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "RESERVED",
+                  "SUBMITTING",
+                  "SUBMITTED",
+                  "SUBMISSION_UNCERTAIN",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "FAILURE"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "provider_task_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Provider Task Id"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "result": {
+                "$ref": "#/$defs/ImageResult"
+              }
+            },
+            "required": [
+              "task_id",
+              "status",
+              "provider_task_id",
+              "group",
+              "output_dir",
+              "reused"
+            ],
+            "title": "CheckpointTask",
+            "type": "object"
+          },
+          "DownloadError": {
+            "properties": {
+              "index": {
+                "title": "Index",
+                "type": "integer"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "error": {
+                "title": "Error",
+                "type": "string"
+              }
+            },
+            "required": [
+              "index",
+              "url",
+              "error"
+            ],
+            "title": "DownloadError",
+            "type": "object"
+          },
+          "ImageResult": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "COMPLETED",
+                  "SUBMITTED",
+                  "NOT_START",
+                  "IN_PROGRESS",
+                  "SUCCESS",
+                  "UNKNOWN"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "group": {
+                "enum": [
+                  "reverse",
+                  "official"
+                ],
+                "title": "Group",
+                "type": "string"
+              },
+              "task_id": {
+                "title": "Task Id",
+                "type": "string"
+              },
+              "output_dir": {
+                "title": "Output Dir",
+                "type": "string"
+              },
+              "next_tool": {
+                "title": "Next Tool",
+                "type": "string"
+              },
+              "warning": {
+                "title": "Warning",
+                "type": "string"
+              },
+              "idempotency_key": {
+                "title": "Idempotency Key",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "auto_poll_interval": {
+                "title": "Auto Poll Interval",
+                "type": "integer"
               },
               "note": {
                 "title": "Note",
@@ -2855,7 +3669,8 @@
             "enum": [
               "ACCEPTED",
               "ATTENTION_REQUIRED",
-              "SNAPSHOT"
+              "SNAPSHOT",
+              "COMPLETED"
             ],
             "title": "Status",
             "type": "string"
@@ -3023,6 +3838,18 @@
               "warning": {
                 "title": "Warning",
                 "type": "string"
+              },
+              "idempotency_key": {
+                "title": "Idempotency Key",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "auto_poll_interval": {
+                "title": "Auto Poll Interval",
+                "type": "integer"
               },
               "note": {
                 "title": "Note",
@@ -3366,6 +4193,18 @@
                 "title": "Warning",
                 "type": "string"
               },
+              "idempotency_key": {
+                "title": "Idempotency Key",
+                "type": "string"
+              },
+              "reused": {
+                "title": "Reused",
+                "type": "boolean"
+              },
+              "auto_poll_interval": {
+                "title": "Auto Poll Interval",
+                "type": "integer"
+              },
               "note": {
                 "title": "Note",
                 "type": "string"
@@ -3583,6 +4422,18 @@
             "title": "Warning",
             "type": "string"
           },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
+          },
           "note": {
             "title": "Note",
             "type": "string"
@@ -3772,8 +4623,8 @@
             "type": "number"
           },
           "poll_interval": {
-            "default": 5,
-            "maximum": 60,
+            "default": 90,
+            "maximum": 300,
             "minimum": 1,
             "title": "Poll Interval",
             "type": "number"
@@ -3837,6 +4688,18 @@
           "warning": {
             "title": "Warning",
             "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "reused": {
+            "title": "Reused",
+            "type": "boolean"
+          },
+          "auto_poll_interval": {
+            "title": "Auto Poll Interval",
+            "type": "integer"
           },
           "note": {
             "title": "Note",

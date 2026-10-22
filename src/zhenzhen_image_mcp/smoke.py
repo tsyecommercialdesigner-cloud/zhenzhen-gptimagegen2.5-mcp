@@ -27,6 +27,7 @@ EXPECTED_TOOLS = {
     "submit_image_generation",
     "submit_image_edit",
     "submit_image_batch",
+    "run_image_batch",
     "get_image_batch",
     "get_batch_image_task",
     "get_image_task",

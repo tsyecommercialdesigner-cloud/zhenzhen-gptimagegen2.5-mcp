@@ -18,7 +18,9 @@
   "src/zhenzhen_image_mcp/config.py",
   "src/zhenzhen_image_mcp/contracts.py",
   "src/zhenzhen_image_mcp/media.py",
+  "src/zhenzhen_image_mcp/monitor.py",
   "src/zhenzhen_image_mcp/provider.py",
+  "src/zhenzhen_image_mcp/runtime.py",
   "src/zhenzhen_image_mcp/server.py",
   "src/zhenzhen_image_mcp/smoke.py",
   "src/zhenzhen_image_mcp/tasks.py"

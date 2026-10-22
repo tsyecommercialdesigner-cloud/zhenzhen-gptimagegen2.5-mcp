@@ -84,7 +84,7 @@ class CheckpointTask(TypedDict):
 class BatchResult(TypedDict):
     checkpointer: str
     thread_id: str
-    status: Literal["ACCEPTED", "ATTENTION_REQUIRED", "SNAPSHOT"]
+    status: Literal["ACCEPTED", "ATTENTION_REQUIRED", "SNAPSHOT", "COMPLETED"]
     tasks: list[CheckpointTask]
     next_tool: str
     note: str
@@ -180,6 +180,9 @@ class ImageResult(TypedDict):
     output_dir: NotRequired[str]
     next_tool: NotRequired[str]
     warning: NotRequired[str]
+    idempotency_key: NotRequired[str]
+    reused: NotRequired[bool]
+    auto_poll_interval: NotRequired[int]
     note: NotRequired[str]
     progress: NotRequired[str | int | float | None]
     fail_reason: NotRequired[str]

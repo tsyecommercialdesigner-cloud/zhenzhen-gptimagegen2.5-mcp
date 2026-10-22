@@ -25,6 +25,9 @@ class ProtocolRecoveryTests(unittest.IsolatedAsyncioTestCase):
         self.requests = []
         self.sequence = []
         self.secret = "private-test-credential"
+        ledger = patch("zhenzhen_image_mcp.checkpoints.PROJECT_DIR", self.root)
+        ledger.start()
+        self.addCleanup(ledger.stop)
 
         def handler(request):
             self.requests.append(request)
@@ -162,7 +165,7 @@ class ProtocolRecoveryTests(unittest.IsolatedAsyncioTestCase):
         async with Client(mcp, mode="legacy") as client:
             inventory = await client.list_tools()
         names = {tool.name for tool in inventory.tools}
-        self.assertEqual(len(names), 11)
+        self.assertEqual(len(names), 12)
         self.assertNotIn("create_response", names)
         self.assertTrue({"edit_image", "submit_image_edit"} <= names)
 

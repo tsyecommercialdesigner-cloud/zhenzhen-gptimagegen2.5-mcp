@@ -34,6 +34,15 @@ from .contracts import (
     OfficialOptions,
     Quality,
 )
+from .monitor import monitor_lifespan
+
+IdempotencyParam = Annotated[
+    str | None,
+    Field(
+        pattern=r"^[A-Za-z0-9_-]{1,128}$",
+        description="可选稳定幂等键；相同参数复用，参数改变拒绝，禁止换键重试未知收费结果。",
+    ),
+]
 
 ScopeParam = Annotated[
     str, Field(pattern=f"^{KEY_PATTERN}$", description="稳定的本地检查点命名空间/会话键，1–128字符。")
@@ -97,6 +106,7 @@ mcp = ValidatedMCPServer(
     "zhenzhen-gptimagegen2-5-mcp",
     version=__version__,
     log_level="WARNING",
+    lifespan=monitor_lifespan,
     instructions=(
         MODEL_GUIDE + "先说明模型选择；生成或精细编辑优先使用 Images 工具。"
         "绘图和编辑会产生供应商费用，提交失败或超时不得自动重提。"
@@ -105,7 +115,8 @@ mcp = ValidatedMCPServer(
         "精细编辑使用 Sunburst 的 edit_image 或 submit_image_edit，通过 Images edits 接口上传参考图。"
         '默认逆向 group="reverse"。仅用户明确声明官转时传 group="official"，扩展参数放 official_options。'
         "不要根据提示词、模型名或网络失败自行切换分组，也不要自动尝试另一分组。"
-        "多图规划使用 submit_image_batch：固定 checkpointer/thread_id/各 task_id，一次最多10项。"
+        "同步多图用 run_image_batch（默认并发5）；异步用 submit_image_batch（最多20项、默认并发5）。"
+        "固定 checkpointer/thread_id/各 task_id；异步每个任务每90秒自动查询，服务退出后暂停，重启恢复。"
         "用 get_image_batch 恢复本地记录，get_batch_image_task 查询单项。不要改变幂等键规避错误；SUBMITTING/SUBMISSION_UNCERTAIN 禁止自动重提。"
     ),
 )
@@ -190,6 +201,7 @@ async def generate_image(
     output_dir: OutputParam = None,
     group: GroupParam = "reverse",
     official_options: OptionsParam = None,
+    idempotency_key: IdempotencyParam = None,
 ) -> ImageResult:
     """同步生成并落盘。默认逆向五参数；官转须显式 group=official。收费，POST 不自动重试。"""
     return cast(
@@ -203,6 +215,7 @@ async def generate_image(
             output_dir=output_dir,
             group=group,
             official_options=official_options,
+            idempotency_key=idempotency_key,
         ),
     )
 
@@ -218,6 +231,7 @@ async def edit_image(
     output_dir: OutputParam = None,
     group: GroupParam = "reverse",
     official_options: OptionsParam = None,
+    idempotency_key: IdempotencyParam = None,
 ) -> ImageResult:
     """同步图像编辑并落盘；多图以 image[] 上传。高编辑精度场景建议 Sunburst。收费。"""
     return cast(
@@ -232,6 +246,7 @@ async def edit_image(
             output_dir=output_dir,
             group=group,
             official_options=official_options,
+            idempotency_key=idempotency_key,
         ),
     )
 
@@ -247,8 +262,9 @@ async def submit_image_generation(
     output_dir: OutputParam = None,
     group: GroupParam = "reverse",
     official_options: OptionsParam = None,
+    idempotency_key: IdempotencyParam = None,
 ) -> ImageResult:
-    """POST generations?async=true 提交收费异步绘图，立即返回 task_id。必须继续查询才能自动落盘。"""
+    """提交收费异步绘图并返回 task_id；服务存活时每90秒自动查询并落盘。可选 idempotency_key 防重。"""
     return cast(
         ImageResult,
         await API().images(
@@ -261,6 +277,7 @@ async def submit_image_generation(
             output_dir=output_dir,
             group=group,
             official_options=official_options,
+            idempotency_key=idempotency_key,
         ),
     )
 
@@ -276,8 +293,9 @@ async def submit_image_edit(
     output_dir: OutputParam = None,
     group: GroupParam = "reverse",
     official_options: OptionsParam = None,
+    idempotency_key: IdempotencyParam = None,
 ) -> ImageResult:
-    """POST edits?async=true 提交收费异步编辑，以 image[] 上传；返回 task_id，之后查询并落盘。"""
+    """提交收费异步编辑，以 image[] 上传；每90秒自动查询并落盘。可选 idempotency_key 防重。"""
     return cast(
         ImageResult,
         await API().images(
@@ -291,6 +309,7 @@ async def submit_image_edit(
             output_dir=output_dir,
             group=group,
             official_options=official_options,
+            idempotency_key=idempotency_key,
         ),
     )
 
@@ -300,11 +319,26 @@ async def submit_image_edit(
 async def submit_image_batch(
     checkpointer: ScopeParam,
     thread_id: ScopeParam,
-    tasks: Annotated[list[BatchImageTask], Field(min_length=1, max_length=10)],
-    max_concurrency: Annotated[int, Field(ge=1, le=10)] = 3,
+    tasks: Annotated[list[BatchImageTask], Field(min_length=1, max_length=20)],
+    max_concurrency: Annotated[int, Field(ge=1, le=20)] = 5,
 ) -> BatchResult:
-    """一次并发提交1–10项收费异步生成/编辑，默认并发3。收到任务编号即返回，不等待成图。同一(checkpointer,thread_id,task_id)及参数复用记录，参数冲突在提交前拒绝；不确定提交永不自动重发。"""
+    """一次提交1–20项收费异步生成/编辑，默认并发5、最多20。收到编号即返回，后台每90秒查询并落盘。同一(checkpointer,thread_id,task_id)及参数复用，冲突拒绝；不确定提交永不自动重发。"""
     return cast(BatchResult, await BatchService().submit(checkpointer, thread_id, tasks, max_concurrency))
+
+
+@mcp.tool(annotations=BATCH)
+@tool_errors
+async def run_image_batch(
+    checkpointer: ScopeParam,
+    thread_id: ScopeParam,
+    tasks: Annotated[list[BatchImageTask], Field(min_length=1, max_length=20)],
+    max_concurrency: Annotated[int, Field(ge=1, le=5)] = 5,
+) -> BatchResult:
+    """同步执行1–20项收费生成/编辑，默认并发5，完成并校验落盘后返回。稳定三元组防重；重放验证文件SHA-256，不重复收费；超时/未知结果禁止重发。"""
+    return cast(
+        BatchResult,
+        await BatchService().submit(checkpointer, thread_id, tasks, max_concurrency, asynchronous=False),
+    )
 
 
 @mcp.tool(annotations=READ)
@@ -349,7 +383,7 @@ async def get_image_task(task_id: str, output_dir: OutputParam = None, save: boo
 async def wait_image_task(
     task_id: str,
     timeout_seconds: Annotated[float, Field(ge=1, le=300)] = 60,
-    poll_interval: Annotated[float, Field(ge=1, le=60)] = 5,
+    poll_interval: Annotated[float, Field(ge=1, le=300)] = 90,
     output_dir: OutputParam = None,
 ) -> ImageResult:
     """有界轮询，NOT_START 排队和 IN_PROGRESS 处理中继续等待，成功后落盘；只读查询有限重试计入等待时限。超时返回 task_id/wait_timed_out，云端任务继续；可稍后再次查询。"""
@@ -384,7 +418,8 @@ def image_workflow(request: str) -> str:
         "解释所选模型，确认编辑时所需参考图片。不要擅自修改需保留的细节。"
         '未声明官转时使用默认 reverse；用户明确声明官转时传 group="official"，并将扩展参数放在 official_options。'
         "优先异步提交并保存 task_id，查询成功后检查文件保存状态，展示返回的绝对路径。"
-        "规划多张图片时用 submit_image_batch，一次最多10项，固定checkpointer/thread_id/task_id，"
+        "同步多张图片用run_image_batch默认并发5，异步用submit_image_batch一次最多20项，"
+        "固定checkpointer/thread_id/task_id；单项工具传稳定idempotency_key。异步自动每90秒查询，"
         "随后使用get_image_batch/get_batch_image_task恢复和查询；不要为了重试更换幂等键。"
         "精细编辑使用 edit_image 或 submit_image_edit，优先 Sunburst；连续编辑时传入上一步结果图片和新的修改要求。失败或等待超时不应自动重新生成。"
     )
