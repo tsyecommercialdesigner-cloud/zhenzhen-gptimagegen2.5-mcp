@@ -99,11 +99,17 @@ class TransientQueryError(ValueError):
 
 def result_manifest(result: dict) -> dict:
     """Persist only local result metadata, never upstream prompts, URLs or image bodies."""
-    return {
+    manifest = {
         k: result[k]
         for k in ("status", "task_id", "group", "output_dir", "files", "save_status")
         if k in result
     }
+    if "download_errors" in result:
+        manifest["download_errors"] = [
+            {"index": error["index"], "url": None, "error": safe_error(ValueError(error["error"]))}
+            for error in result["download_errors"]
+        ]
+    return manifest
 
 
 def verify_manifest(result: dict) -> None:

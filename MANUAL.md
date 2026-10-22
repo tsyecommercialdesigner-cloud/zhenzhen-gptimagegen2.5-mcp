@@ -1208,6 +1208,8 @@ if ($LASTEXITCODE -ne 0) { throw '依赖安装失败，停止启动。' }
 
 `files[]` 每项为 `index`、`path`（绝对路径）、`mime_type`、`bytes`、`sha256`、`reused`。`save_status` 为 `saved/partial/failed/no_images`；`no_images` 表示响应中未找到可保存的图片，应检查供应商结果。`download_errors[]` 含 `index`、可用时的 `url`、脱敏 `error`。不要把 `SUCCESS` 或 `COMPLETED` 当作文件保存成功。参数/HTTP/协议错误由 MCP 返回工具错误；不把错误伪装成图片结果。
 
+批量结果、幂等重放和自动轮询的持久清单也保留 `download_errors[]`，但其中 `url` 固定为 null，错误文本中的 URL 和常见令牌会脱敏；不持久化上游下载地址。失败清单用于诊断，不表示已保存成功，也不能据此换键重新生成。异步保存后续恢复成功时会更新文件清单并清空旧下载错误；此前已经丢弃的错误无法从新代码补回。
+
 提示 `image_workflow`：必填字符串参数 `request`，无默认值，返回一个包含模型建议和操作顺序的用户消息模板。示例客户端调用 `get_prompt("image_workflow", {"request": "保持人物脸部不变，给人物加眼镜"})`。模板不执行任务。
 
 资源 `zhenzhen://models`：无参数，MIME `application/json`，返回模型数组和选型建议。示例 `read_resource("zhenzhen://models")`。无动态资源模板；不开放任意本地文件读取资源。

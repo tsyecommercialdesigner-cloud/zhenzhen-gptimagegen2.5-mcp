@@ -81,20 +81,29 @@ class ConcurrencyTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_parallel_sync_batches_share_process_limit(self):
         active = peak = 0
+        gate, reached = asyncio.Event(), asyncio.Event()
 
         async def handler(request):
             nonlocal active, peak
             self.requests.append(request)
             active += 1
             peak = max(peak, active)
-            await asyncio.sleep(0.01)
+            if active == 5:
+                reached.set()
+            await gate.wait()
             active -= 1
             return httpx2.Response(200, json=self.success())
 
         self.install_handler(handler)
-        values = await asyncio.gather(
+        jobs = asyncio.gather(
             *[self.call("run_image_batch", self.arguments(8, thread_id=f"thread-{i}")) for i in range(3)]
         )
+        try:
+            await asyncio.wait_for(reached.wait(), 10)
+            self.assertEqual(len(self.requests), 5)
+        finally:
+            gate.set()
+        values = await jobs
         self.assertTrue(all(not v.is_error for v in values))
         self.assertEqual(len(self.requests), 24)
         self.assertEqual(peak, 5)
@@ -181,11 +190,25 @@ class ConcurrencyTests(unittest.IsolatedAsyncioTestCase):
     async def test_sync_partial_download_is_reported_without_regeneration(self):
         self.sequence = [(200, {"data": [{"url": "https://public.example/image.png"}]})]
         args = self.arguments()
-        with patch("zhenzhen_image_mcp.media.download", side_effect=ValueError("bad image")):
+        with patch(
+            "zhenzhen_image_mcp.media.download",
+            side_effect=ValueError("bad image https://public.example/private?token=hidden Bearer hidden"),
+        ):
             result = await self.call("run_image_batch", args)
         self.assertEqual(result.structured_content["status"], "ATTENTION_REQUIRED")
         replay = await self.call("run_image_batch", args)
-        self.assertEqual(replay.structured_content["tasks"][0]["result"]["save_status"], "failed")
+        for response in (result, replay):
+            saved = response.structured_content["tasks"][0]["result"]
+            self.assertEqual(saved["save_status"], "failed")
+            self.assertEqual(saved["download_errors"][0]["index"], 0)
+            self.assertIsNone(saved["download_errors"][0]["url"])
+            self.assertIn("bad image", saved["download_errors"][0]["error"])
+            self.assertNotIn("hidden", json.dumps(saved))
+            self.assertNotIn("public.example", json.dumps(saved))
+        with CheckpointStore().connection(read_only=True) as db:
+            stored = db.execute("SELECT result_json FROM tasks").fetchone()[0]
+        self.assertNotIn("hidden", stored)
+        self.assertNotIn("public.example", stored)
         self.assertEqual(len(self.requests), 1)
 
     async def test_invalid_sync_limits_fail_before_payment(self):
@@ -266,6 +289,30 @@ class AutomaticPollingTests(unittest.IsolatedAsyncioTestCase):
         snapshot = await BatchService().snapshot("detail-pages", "product-001")
         self.assertEqual(snapshot["tasks"][0]["result"]["save_status"], "saved")
         self.assertEqual(sum(r.method == "POST" for r in self.requests), 1)
+
+    async def test_download_diagnostics_survive_polling_and_clear_after_recovery(self):
+        with patch("zhenzhen_image_mcp.checkpoints.time.time", return_value=100):
+            await self.submit()
+        response = self.task()
+        response[1]["data"]["data"] = {"data": [{"url": "https://public.example/private?token=hidden"}]}
+        self.sequence = [response]
+        with patch("zhenzhen_image_mcp.media.download", side_effect=ValueError("Image download HTTP 403")):
+            with patch("zhenzhen_image_mcp.checkpoints.time.time", return_value=190):
+                await self.monitor().tick()
+        snapshot = await BatchService().snapshot("detail-pages", "product-001")
+        failed = snapshot["tasks"][0]["result"]
+        self.assertEqual(failed["save_status"], "failed")
+        self.assertIn("403", failed["download_errors"][0]["error"])
+        self.assertNotIn("hidden", json.dumps(failed))
+        self.assertIsNone(failed["download_errors"][0]["url"])
+        self.sequence = [self.task()]
+        with patch("zhenzhen_image_mcp.checkpoints.time.time", return_value=280):
+            await self.monitor().tick()
+        saved = (await BatchService().snapshot("detail-pages", "product-001"))["tasks"][0]["result"]
+        self.assertEqual(saved["save_status"], "saved")
+        self.assertEqual(saved["download_errors"], [])
+        self.assertTrue(Path(saved["files"][0]["path"]).is_file())
+        self.assertEqual([r.method for r in self.requests], ["POST", "GET", "GET"])
 
     async def test_provider_failure_is_terminal_and_never_resubmitted(self):
         with patch("zhenzhen_image_mcp.checkpoints.time.time", return_value=100):
